@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { MenuSection } from "./MenuSection";
 import { InvoiceSection } from "./InvoiceSection";
+import RightSidebar from "../../../shared/RIghtBar";
 
 export function OrderItemPage() {
   const [modal, setModal] = useState(false);
@@ -24,6 +25,8 @@ export function OrderItemPage() {
           setModal={setModal}
         />
       </div>
+
+      <RightSidebar isOpen={true} />
 
       {/* <PaymentModal
         isOpen={modal}
