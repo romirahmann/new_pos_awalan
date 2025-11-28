@@ -1,0 +1,26 @@
+{
+  "name": "pos_be",
+  "version": "1.0.0",
+  "description": "POS Awalan.Coffee",
+  "main": "server.js",
+  "scripts": {
+    "start": "nodemon -r dotenv/config server.js dotenv_config_path=./env/.env"
+  },
+  "author": "Romi Rahman",
+  "license": "ISC",
+  "dependencies": {
+    "argon2": "^0.44.0",
+    "cloudinary": "^1.41.3",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.19",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "knex": "^3.1.0",
+    "multer": "^2.0.2",
+    "multer-storage-cloudinary": "^4.0.0",
+    "mysql2": "^3.15.3",
+    "nodemon": "^3.1.10",
+    "socket.io": "^4.8.1"
+  }
+}

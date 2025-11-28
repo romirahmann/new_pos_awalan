@@ -1,0 +1,144 @@
+const productModel = require("../../models/product.model");
+const api = require("../../utils/common");
+const { emit } = require("../../services/socket.service");
+const cloud = require("../../utils/cloudinary");
+
+/* ============================================================
+   ✅ CREATE PRODUCT (UPLOAD IMAGE JIKA ADA)
+============================================================ */
+const createProduct = async (req, res) => {
+  try {
+    const data = req.body;
+    let file = req.img;
+
+    let newProduct = {
+      ...data,
+      img: file?.path || null,
+    };
+
+    const result = await productModel.create(newProduct);
+    const createdId = result[0];
+
+    emit("product:created", { id: createdId, ...newProduct });
+
+    return api.success(
+      res,
+      { id: createdId, ...newProduct },
+      "Product created"
+    );
+  } catch (error) {
+    console.error("❌ Error createProduct:", error);
+    return api.error(res, "Internal Server Error", 500);
+  }
+};
+
+/* ============================================================
+   ✅ GET ALL PRODUCTS
+============================================================ */
+const getAllProducts = async (req, res) => {
+  try {
+    const products = await productModel.getAll();
+    return api.success(res, products);
+  } catch (error) {
+    console.error("❌ Error getAllProducts:", error);
+    return api.error(res, "Internal Server Error", 500);
+  }
+};
+
+/* ============================================================
+   ✅ GET PRODUCT BY ID
+============================================================ */
+const getProductById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const product = await productModel.getById(id);
+    if (!product) return api.error(res, "Product not found", 404);
+    return api.success(res, product);
+  } catch (error) {
+    console.error("❌ Error getProductById:", error);
+    return api.error(res, "Internal Server Error", 500);
+  }
+};
+
+/* ============================================================
+   ✅ UPDATE PRODUCT (HAPUS GAMBAR LAMA JIKA DIGANTI)
+============================================================ */
+const updateProduct = async (req, res) => {
+  const { id } = req.params;
+  const data = req.body;
+
+  try {
+    const existing = await productModel.getById(id);
+    if (!existing) return api.error(res, "Product not found", 404);
+
+    // Jika ada file baru, upload dulu, lalu hapus yang lama
+    if (req.img) {
+      if (existing.img) {
+        const publicId = cloud.getPublicId(existing.img);
+        if (publicId) await cloud.deleteFile(publicId);
+      }
+      data.img = req.img.path;
+    }
+
+    await productModel.update(id, data);
+
+    emit("product:updated", { id, ...data });
+
+    return api.success(res, { id, ...data }, "Product updated");
+  } catch (error) {
+    console.error("❌ Error updateProduct:", error);
+    return api.error(res, "Internal Server Error", 500);
+  }
+};
+
+/* ============================================================
+   ✅ DELETE PRODUCT (HAPUS GAMBAR DARI CLOUDINARY)
+============================================================ */
+const deleteProduct = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const existing = await productModel.getById(id);
+    if (!existing) return api.error(res, "Product not found", 404);
+
+    if (existing.img) {
+      const publicId = cloud.getPublicId(existing.img);
+      if (publicId) await cloud.deleteFile(publicId);
+    }
+
+    await productModel.remove(id);
+
+    emit("product:deleted", { id });
+
+    return api.success(res, null, "Product deleted successfully");
+  } catch (error) {
+    console.error("❌ Error deleteProduct:", error);
+    return api.error(res, "Internal Server Error", 500);
+  }
+};
+
+/* ============================================================
+   ✅ GET BY CATEGORY
+============================================================ */
+const getProductsByCategory = async (req, res) => {
+  const { categoryId } = req.params;
+  try {
+    const products = await productModel.getByCategory(categoryId);
+    return api.success(res, products);
+  } catch (error) {
+    console.error("❌ Error getProductsByCategory:", error);
+    return api.error(res, "Internal Server Error", 500);
+  }
+};
+
+/* ============================================================
+   🚀 EXPORT MODULE
+============================================================ */
+module.exports = {
+  createProduct,
+  getAllProducts,
+  getProductById,
+  updateProduct,
+  deleteProduct,
+  getProductsByCategory,
+};
