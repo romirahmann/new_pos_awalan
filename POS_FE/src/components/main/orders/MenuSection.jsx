@@ -2,6 +2,7 @@
 import { FaSearch } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import RightSidebar from "../../../shared/RIghtBar";
 
 export function MenuSection({ cart, setCart }) {
   const menuItems = [
@@ -11,6 +12,7 @@ export function MenuSection({ cart, setCart }) {
       name: "Espresso",
       category: "Coffee",
       price: 25000,
+      variants: ["Hot", "Ice"],
     },
     {
       id: 2,
@@ -18,6 +20,7 @@ export function MenuSection({ cart, setCart }) {
       name: "Cappuccino",
       category: "Coffee",
       price: 30000,
+      variants: ["Hot", "Ice"],
     },
     {
       id: 3,
@@ -25,6 +28,7 @@ export function MenuSection({ cart, setCart }) {
       name: "Latte",
       category: "Coffee",
       price: 32000,
+      variants: ["Hot", "Ice"],
     },
     {
       id: 4,
@@ -32,6 +36,7 @@ export function MenuSection({ cart, setCart }) {
       name: "Chocolate Ice",
       category: "Non-Coffee",
       price: 28000,
+      variants: ["Hot", "Ice"],
     },
     {
       id: 5,
@@ -56,26 +61,135 @@ export function MenuSection({ cart, setCart }) {
     },
   ];
 
-  const categories = ["All", "Coffee", "Non-Coffee", "Snack", "Food"];
-
+  const [rightBar, setRightBar] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
+  const [selectedItem, setSelectedItem] = useState(null);
 
+  // derive categories from data (keeps sync with data)
+  const categories = [
+    "All",
+    ...Array.from(new Set(menuItems.map((m) => m.category))),
+  ];
+
+  // helpers
+  const safeNumber = (v) => {
+    const n = Number(v);
+    return Number.isNaN(n) ? 0 : n;
+  };
+
+  const addonsTotal = (addons) => {
+    return (addons || []).reduce((s, a) => s + safeNumber(a.price), 0);
+  };
+
+  const addonsSignature = (addons) => {
+    // create deterministic signature for equality (name+price order matters)
+    if (!addons || addons.length === 0) return "no-addons";
+    return addons
+      .map((a) => `${a.name || ""}:${safeNumber(a.price)}`)
+      .join("|");
+  };
+
+  const computeCartItemId = (item) => {
+    const sig = addonsSignature(item.addOns);
+    const note = (item.note || "").replace(/\s+/g, "_");
+    const variant = item.variant || "no-variant";
+    return `${item.productId}-${variant}-${sig}-${note}`;
+  };
+
+  // filter
   const filteredMenu = menuItems.filter(
     (item) =>
       (activeCategory === "All" || item.category === activeCategory) &&
       item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const addToCart = (item) => {
-    setCart((prev) => {
-      const exists = prev.find((c) => c.productId === item.productId);
-      return exists
-        ? prev.map((c) =>
-            c.productId === item.productId ? { ...c, qty: c.qty + 1 } : c
-          )
-        : [...prev, { ...item, qty: 1 }];
+  // open detail with safe defaults
+  const handleProductDetail = (item) => {
+    setSelectedItem({
+      ...item,
+      qty: 1,
+      variant: item.variants ? item.variants[0] : null,
+      note: "",
+      addOns: [],
     });
+    setRightBar(true);
+  };
+
+  // add empty addon row
+  const addAddon = () =>
+    setSelectedItem((prev) => ({
+      ...prev,
+      addOns: [...(prev.addOns || []), { id: Date.now(), name: "", price: 0 }],
+    }));
+
+  // update addon by index
+  const updateAddon = (index, field, value) =>
+    setSelectedItem((prev) => {
+      const newAddons = [...(prev.addOns || [])];
+      newAddons[index] = {
+        ...newAddons[index],
+        [field]: field === "price" ? safeNumber(value) : value,
+      };
+      return { ...prev, addOns: newAddons };
+    });
+
+  // remove addon by index
+  const removeAddon = (index) =>
+    setSelectedItem((prev) => ({
+      ...prev,
+      addOns: (prev.addOns || []).filter((_, i) => i !== index),
+    }));
+
+  // update qty
+  const updateQty = (delta) =>
+    setSelectedItem((prev) => ({
+      ...prev,
+      qty: Math.max(1, (prev.qty || 1) + delta),
+    }));
+
+  // calculate final price for the selected item (including addons)
+  const selectedFinalPrice = () => {
+    if (!selectedItem) return 0;
+    const base = safeNumber(selectedItem.price);
+    const add = addonsTotal(selectedItem.addOns);
+    return (base + add) * (selectedItem.qty || 1);
+  };
+
+  // add to cart (merge if same cartItemId exists)
+  const addToCart = (item) => {
+    const cartItemId = computeCartItemId(item);
+    const basePrice = safeNumber(item.price) + addonsTotal(item.addOns);
+    const newItem = {
+      cartItemId,
+      productId: item.productId,
+      name: item.name,
+      price: basePrice,
+      qty: item.qty || 1,
+      variant: item.variant || null,
+      note: item.note || "",
+      category: item.category,
+      addOns: item.addOns || [],
+      totalPrice: basePrice * (item.qty || 1),
+    };
+
+    setCart((prev) => {
+      const exists = prev.find((c) => c.cartItemId === cartItemId);
+      if (!exists) return [...prev, newItem];
+      // merge qty
+      return prev.map((c) =>
+        c.cartItemId === cartItemId
+          ? {
+              ...c,
+              qty: c.qty + newItem.qty,
+              totalPrice: (c.qty + newItem.qty) * c.price,
+            }
+          : c
+      );
+    });
+
+    setRightBar(false);
+    setSelectedItem(null);
   };
 
   return (
@@ -111,23 +225,159 @@ export function MenuSection({ cart, setCart }) {
       </div>
 
       {/* Menu Items */}
-      <div className="grid grid-cols-3 gap-3 ">
+      <div className="grid grid-cols-3 gap-3">
         {filteredMenu.map((item) => (
           <motion.button
             key={item.productId}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => addToCart(item)}
+            onClick={() => handleProductDetail(item)}
             className="p-4 bg-gray-700 hover:bg-gray-600 rounded-xl shadow text-left transition"
           >
             <h3 className="font-semibold">{item.name}</h3>
             <p className="text-xs text-gray-400">{item.category}</p>
             <p className="font-bold text-blue-400 mt-1">
-              Rp {item.price.toLocaleString()}
+              Rp {safeNumber(item.price).toLocaleString()}
             </p>
           </motion.button>
         ))}
       </div>
+
+      {/* RIGHT SIDEBAR */}
+      {selectedItem && (
+        <RightSidebar
+          isOpen={rightBar}
+          title={"Detail Order"}
+          onClose={() => {
+            setRightBar(false);
+            setSelectedItem(null);
+          }}
+        >
+          <div className="flex flex-col h-full text-gray-200">
+            {/* Header */}
+            <div className="px-5">
+              <h2 className="text-2xl font-bold">{selectedItem.name}</h2>
+              <p className="text-sm text-gray-400 mb-2">
+                {selectedItem.category}
+              </p>
+              <p className="text-xl font-semibold text-blue-400 mb-4">
+                Rp {safeNumber(selectedItem.price).toLocaleString()}
+              </p>
+            </div>
+
+            {/* QTY */}
+            <div className="px-5 mb-4">
+              <label className="text-sm mb-2 block">Jumlah</label>
+              <div className="flex items-center justify-between bg-gray-700 px-4 py-2 rounded-lg">
+                <button onClick={() => updateQty(-1)} className="text-2xl">
+                  −
+                </button>
+                <span className="text-lg font-semibold">
+                  {selectedItem.qty}
+                </span>
+                <button onClick={() => updateQty(1)} className="text-2xl">
+                  +
+                </button>
+              </div>
+            </div>
+
+            {/* Variant */}
+            {selectedItem.variants && (
+              <div className="px-5 mb-4">
+                <label className="text-sm mb-2 block">Pilih Variant</label>
+                <div className="space-y-2">
+                  {selectedItem.variants.map((variant) => (
+                    <label
+                      key={variant}
+                      className="flex items-center gap-3 bg-gray-700 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-600"
+                    >
+                      <input
+                        type="radio"
+                        name="variant"
+                        value={variant}
+                        checked={selectedItem.variant === variant}
+                        onChange={() =>
+                          setSelectedItem((p) => ({ ...p, variant }))
+                        }
+                      />
+                      <span>{variant}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Add-Ons Manual */}
+            <div className="px-4 mx-5 mb-4 bg-gray-700 p-3 rounded-lg">
+              <div className="flex justify-between mb-2">
+                <span className="font-semibold">Add-On Manual</span>
+                <button
+                  onClick={addAddon}
+                  className="text-sm bg-blue-600 px-2 py-1 rounded"
+                >
+                  + Add
+                </button>
+              </div>
+
+              {(selectedItem.addOns || []).map((addon, idx) => (
+                <div key={idx} className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    placeholder="Nama Add-on"
+                    value={addon.name}
+                    onChange={(e) => updateAddon(idx, "name", e.target.value)}
+                    className="flex-1 p-2 bg-gray-600 rounded"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Harga"
+                    value={addon.price}
+                    onChange={(e) => updateAddon(idx, "price", e.target.value)}
+                    className="w-28 p-2 bg-gray-600 rounded"
+                  />
+                  <button
+                    onClick={() => removeAddon(idx)}
+                    className="text-red-400"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Note */}
+            <div className="px-5 mb-4">
+              <label className="text-sm mb-2 block">Catatan</label>
+              <textarea
+                placeholder="Tanpa gula, ekstra es, dll..."
+                value={selectedItem.note}
+                onChange={(e) =>
+                  setSelectedItem((p) => ({ ...p, note: e.target.value }))
+                }
+                className="w-full p-3 bg-gray-700 rounded-lg"
+                rows="3"
+              />
+            </div>
+
+            {/* Total & Add */}
+            <div className="mt-auto p-5 border-t border-gray-700">
+              <div className="flex justify-between font-semibold mb-3">
+                <span>Total</span>
+                <span className="text-blue-400 text-lg">
+                  Rp {selectedFinalPrice().toLocaleString()}
+                </span>
+              </div>
+
+              <button
+                onClick={() => addToCart(selectedItem)}
+                className="w-full bg-blue-600 hover:bg-blue-700 py-3 mt-4 rounded-lg font-semibold text-white"
+              >
+                Tambah ke Pesanan
+              </button>
+            </div>
+          </div>
+        </RightSidebar>
+      )}
     </div>
   );
 }

@@ -8,7 +8,7 @@ export function AdminLayout() {
   const [openSidebarMobile, setOpenSidebarMobile] = useState(false);
 
   return (
-    <div className="flex relative h-screen bg-gray-100 font-poppins">
+    <div className="flex relative h-screen bg-gray-300 font-poppins">
       {/* Sidebar desktop */}
       <div className="hidden md:block">
         <Sidebar variant="desktop" />
@@ -22,7 +22,7 @@ export function AdminLayout() {
       {/* Main content */}
       <div className="flex flex-col  flex-1 overflow-hidden">
         <Topbar openSidebar={() => setOpenSidebarMobile(true)} />
-        <div className="flex-1  overflow-auto p-6 bg-gray-200">
+        <div className="flex-1  overflow-auto p-6 bg-gray-400">
           <Outlet />
         </div>
       </div>
