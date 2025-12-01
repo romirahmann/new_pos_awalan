@@ -1,39 +1,28 @@
 const productModel = require("../../models/product.model");
 const api = require("../../utils/common");
 const { emit } = require("../../services/socket.service");
-const cloud = require("../../utils/cloudinary");
 
 /* ============================================================
-   ✅ CREATE PRODUCT (UPLOAD IMAGE JIKA ADA)
+   🟢 CREATE PRODUCT
 ============================================================ */
 const createProduct = async (req, res) => {
   try {
     const data = req.body;
-    let file = req.img;
 
-    let newProduct = {
-      ...data,
-      img: file?.path || null,
-    };
-
-    const result = await productModel.create(newProduct);
+    const result = await productModel.create(data);
     const createdId = result[0];
 
-    emit("product:created", { id: createdId, ...newProduct });
+    emit("product:created", { id: createdId, ...data });
 
-    return api.success(
-      res,
-      { id: createdId, ...newProduct },
-      "Product created"
-    );
+    return api.success(res, { id: createdId, ...data });
   } catch (error) {
     console.error("❌ Error createProduct:", error);
-    return api.error(res, "Internal Server Error", 500);
+    return api.error(res, "Internal Server Error");
   }
 };
 
 /* ============================================================
-   ✅ GET ALL PRODUCTS
+   📦 GET ALL PRODUCTS
 ============================================================ */
 const getAllProducts = async (req, res) => {
   try {
@@ -41,27 +30,28 @@ const getAllProducts = async (req, res) => {
     return api.success(res, products);
   } catch (error) {
     console.error("❌ Error getAllProducts:", error);
-    return api.error(res, "Internal Server Error", 500);
+    return api.error(res, "Internal Server Error");
   }
 };
 
 /* ============================================================
-   ✅ GET PRODUCT BY ID
+   🔍 GET PRODUCT BY ID
 ============================================================ */
 const getProductById = async (req, res) => {
   const { id } = req.params;
   try {
     const product = await productModel.getById(id);
-    if (!product) return api.error(res, "Product not found", 404);
+    if (!product) return api.error(res, "Product not found");
+
     return api.success(res, product);
   } catch (error) {
     console.error("❌ Error getProductById:", error);
-    return api.error(res, "Internal Server Error", 500);
+    return api.error(res, "Internal Server Error");
   }
 };
 
 /* ============================================================
-   ✅ UPDATE PRODUCT (HAPUS GAMBAR LAMA JIKA DIGANTI)
+   ✏ UPDATE PRODUCT
 ============================================================ */
 const updateProduct = async (req, res) => {
   const { id } = req.params;
@@ -69,56 +59,42 @@ const updateProduct = async (req, res) => {
 
   try {
     const existing = await productModel.getById(id);
-    if (!existing) return api.error(res, "Product not found", 404);
-
-    // Jika ada file baru, upload dulu, lalu hapus yang lama
-    if (req.img) {
-      if (existing.img) {
-        const publicId = cloud.getPublicId(existing.img);
-        if (publicId) await cloud.deleteFile(publicId);
-      }
-      data.img = req.img.path;
-    }
+    if (!existing) return api.error(res, "Product not found");
 
     await productModel.update(id, data);
 
     emit("product:updated", { id, ...data });
 
-    return api.success(res, { id, ...data }, "Product updated");
+    return api.success(res, { id, ...data });
   } catch (error) {
     console.error("❌ Error updateProduct:", error);
-    return api.error(res, "Internal Server Error", 500);
+    return api.error(res, "Internal Server Error");
   }
 };
 
 /* ============================================================
-   ✅ DELETE PRODUCT (HAPUS GAMBAR DARI CLOUDINARY)
+   🗑 DELETE PRODUCT
 ============================================================ */
 const deleteProduct = async (req, res) => {
   const { id } = req.params;
 
   try {
     const existing = await productModel.getById(id);
-    if (!existing) return api.error(res, "Product not found", 404);
-
-    if (existing.img) {
-      const publicId = cloud.getPublicId(existing.img);
-      if (publicId) await cloud.deleteFile(publicId);
-    }
+    if (!existing) return api.error(res, "Product not found");
 
     await productModel.remove(id);
 
     emit("product:deleted", { id });
 
-    return api.success(res, null, "Product deleted successfully");
+    return api.success(res, "Product deleted successfully");
   } catch (error) {
     console.error("❌ Error deleteProduct:", error);
-    return api.error(res, "Internal Server Error", 500);
+    return api.error(res, "Internal Server Error");
   }
 };
 
 /* ============================================================
-   ✅ GET BY CATEGORY
+   📂 GET PRODUCTS BY CATEGORY
 ============================================================ */
 const getProductsByCategory = async (req, res) => {
   const { categoryId } = req.params;
@@ -127,7 +103,7 @@ const getProductsByCategory = async (req, res) => {
     return api.success(res, products);
   } catch (error) {
     console.error("❌ Error getProductsByCategory:", error);
-    return api.error(res, "Internal Server Error", 500);
+    return api.error(res, "Internal Server Error");
   }
 };
 

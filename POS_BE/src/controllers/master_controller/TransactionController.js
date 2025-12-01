@@ -37,15 +37,16 @@ const getTrxById = async (req, res) => {
 const createTrx = async (req, res) => {
   let data = req.body;
   try {
+    console.log(data);
     const invoiceCode = await counterModel.generateInvoiceCode();
-    data = { ...data, invoiceCode };
+    data = { ...data, status: "pending", invoiceCode };
 
     const result = await trxModel.createdTransaction(data);
     const id = result[0];
 
     emit("transaction:created", { id, invoiceCode, ...data });
 
-    return api.success(res, { id, invoiceCode }, "Transaction created");
+    return api.success(res, id);
   } catch (error) {
     console.log("❌ createTrx error:", error);
     return api.error(res, "Internal Server Error");
@@ -85,7 +86,6 @@ const deleteTrx = async (req, res) => {
     const existing = await trxModel.getTransactionById(transactionId);
     if (!existing) return api.error(res, "Transaction not found", 404);
 
-    await trxModel.deleteDetailByTransactionId(transactionId);
     await trxModel.deletedTransaction(transactionId);
 
     emit("transaction:deleted", { id: transactionId });
@@ -135,14 +135,15 @@ const createDetailTrx = async (req, res) => {
    ✅ UPDATE TRANSACTION DETAIL
 ============================================================ */
 const updateDetailTrx = async (req, res) => {
-  const { id } = req.params;
+  const { transactionId } = req.params;
   const data = req.body;
   try {
     const existing = await trxModel.getDetailById(id);
-    if (!existing) return api.error(res, "Detail not found", 404);
+    console.log(transactionId, data);
+    // if (!existing) return api.error(res, "Detail not found", 404);
 
-    await trxModel.updateDetailTransaction(id, data);
-    emit("transaction_detail:updated", { id, ...data });
+    // await trxModel.updateDetailTransaction(id, data);
+    // emit("transaction_detail:updated", { id, ...data });
 
     return api.success(res, { id, ...data }, "Detail updated successfully");
   } catch (error) {

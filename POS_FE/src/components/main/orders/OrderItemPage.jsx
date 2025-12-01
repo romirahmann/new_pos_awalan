@@ -1,8 +1,10 @@
 /* eslint-disable no-unused-vars */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MenuSection } from "./MenuSection";
 import { InvoiceSection } from "./InvoiceSection";
 import RightSidebar from "../../../shared/RIghtBar";
+import api from "../../../services/axios.service";
+import { useParams } from "@tanstack/react-router";
 
 export function OrderItemPage() {
   const [modal, setModal] = useState(false);
@@ -13,6 +15,8 @@ export function OrderItemPage() {
     orderType: "Dine In",
     notes: "",
   });
+  const { transactionId } = useParams([]);
+  useEffect(() => {}, []);
 
   const handlePaymentMethod = (val) => {
     setFormData({
@@ -26,12 +30,16 @@ export function OrderItemPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(cart, formData);
+    console.log({ cart, formData });
   };
 
   const saveOrder = async (e) => {
     e.preventDefault();
-    console.log(cart, formData);
+    try {
+      let res = await api.post();
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (

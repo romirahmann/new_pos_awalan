@@ -3,20 +3,21 @@ const api = require("../../utils/common");
 const { emit } = require("../../services/socket.service");
 
 /* ============================================================
-   ✅ GET ALL CASHBOOK RECORDS
+   📄 GET ALL CASHBOOK RECORDS
 ============================================================ */
 const getAllCashbook = async (req, res) => {
   try {
-    const data = await cashbookModel.getAllCashbook();
+    const filters = req.query || {};
+    const data = await cashbookModel.getAllCashbook(filters);
     return api.success(res, data);
   } catch (error) {
-    console.log("❌ getAllCashbook error:", error);
+    console.error("❌ getAllCashbook error:", error);
     return api.error(res, "Internal Server Error");
   }
 };
 
 /* ============================================================
-   ✅ GET CASHBOOK BY ID
+   🔍 GET CASHBOOK BY ID
 ============================================================ */
 const getCashbookById = async (req, res) => {
   const { id } = req.params;
@@ -25,57 +26,58 @@ const getCashbookById = async (req, res) => {
     if (!data) return api.error(res, "Cashbook record not found", 404);
     return api.success(res, data);
   } catch (error) {
-    console.log("❌ getCashbookById error:", error);
+    console.error("❌ getCashbookById error:", error);
     return api.error(res, "Internal Server Error");
   }
 };
 
 /* ============================================================
-   ✅ CREATE CASHBOOK RECORD
+   ➕ CREATE CASHBOOK RECORD
 ============================================================ */
 const createCashbook = async (req, res) => {
   try {
-    const data = req.body;
-    const result = await cashbookModel.createCashbook(data);
+    const payload = {
+      ...req.body,
+      createdAt: new Date(),
+      createdBy: req.user?.userId || req.body.createdBy || null,
+    };
 
-    // Emit Socket, format: controller:action
-    emit("cashbook:created", { id: result[0], ...data });
+    const result = await cashbookModel.createCashbook(payload);
+    const newRecord = { id: result[0], ...payload };
 
-    return api.success(
-      res,
-      { id: result[0], ...data },
-      "Cashbook record created"
-    );
+    emit("cashbook:created", newRecord);
+
+    return api.success(res, newRecord);
   } catch (error) {
-    console.log("❌ createCashbook error:", error);
+    console.error("❌ createCashbook error:", error);
     return api.error(res, "Internal Server Error");
   }
 };
 
 /* ============================================================
-   ✅ UPDATE CASHBOOK RECORD
+   ✏ UPDATE CASHBOOK RECORD
 ============================================================ */
 const updateCashbook = async (req, res) => {
   const { id } = req.params;
   const data = req.body;
+
   try {
     const existing = await cashbookModel.getCashbookById(id);
     if (!existing) return api.error(res, "Cashbook record not found", 404);
 
     await cashbookModel.updateCashbook(id, data);
 
-    // Emit Socket
     emit("cashbook:updated", { id, ...data });
 
-    return api.success(res, { id, ...data }, "Cashbook record updated");
+    return api.success(res, { id, ...data });
   } catch (error) {
-    console.log("❌ updateCashbook error:", error);
+    console.error("❌ updateCashbook error:", error);
     return api.error(res, "Internal Server Error");
   }
 };
 
 /* ============================================================
-   ✅ DELETE CASHBOOK RECORD
+   🗑 DELETE CASHBOOK RECORD
 ============================================================ */
 const deleteCashbook = async (req, res) => {
   const { id } = req.params;
@@ -85,12 +87,13 @@ const deleteCashbook = async (req, res) => {
 
     await cashbookModel.deleteCashbook(id);
 
-    // Emit Socket
     emit("cashbook:deleted", { id });
 
-    return api.success(res, "Cashbook record deleted successfully");
+    return api.success(res, {
+      message: "Cashbook record deleted successfully",
+    });
   } catch (error) {
-    console.log("❌ deleteCashbook error:", error);
+    console.error("❌ deleteCashbook error:", error);
     return api.error(res, "Internal Server Error");
   }
 };

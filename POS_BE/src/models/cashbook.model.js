@@ -1,28 +1,72 @@
 const db = require("../database/db.config");
 
-// 🔹 Ambil semua record cashbook
-const getAllCashbook = async () =>
-  db("cashbook as c")
+/* ============================================================
+   📄 GET ALL WITH FILTERS (optional: date, type)
+============================================================ */
+const getAllCashbook = async (filters = {}) => {
+  const query = db("cashbook as c")
+    .leftJoin("users as u", "c.createdBy", "u.userId")
     .select("c.*", "u.username as createdByName")
-    .leftJoin("users as u", "c.createdBy", "u.userId");
+    .orderBy("c.recordDate", "desc");
 
-// 🔹 Ambil cashbook berdasarkan ID
+  if (filters.date) query.where("recordDate", filters.date);
+  if (filters.month && filters.year)
+    query.whereRaw("MONTH(recordDate) = ? AND YEAR(recordDate) = ?", [
+      filters.month,
+      filters.year,
+    ]);
+  if (filters.type) query.where("entryType", filters.type); // 'income' / 'expense'
+
+  return await query;
+};
+
+/* ============================================================
+   📄 GET SINGLE CASHBOOK BY ID
+============================================================ */
 const getCashbookById = async (id) =>
   db("cashbook as c")
-    .select("c.*", "u.username as createdByName")
     .leftJoin("users as u", "c.createdBy", "u.userId")
+    .select("c.*", "u.username as createdByName")
     .where({ id })
     .first();
 
-// 🔹 Buat record cashbook baru
-const createCashbook = async (data) => db("cashbook").insert(data);
+/* ============================================================
+   ➕ CREATE NEW CASHBOOK ENTRY
+============================================================ */
+const createCashbook = async (data) => {
+  return await db("cashbook").insert(data);
+};
 
-// 🔹 Update record cashbook
+/* ============================================================
+   ✏ UPDATE CASHBOOK ENTRY
+============================================================ */
 const updateCashbook = async (id, data) =>
-  db("cashbook").where({ id }).update(data);
+  await db("cashbook").where({ id }).update(data);
 
-// 🔹 Hapus record cashbook
-const deleteCashbook = async (id) => db("cashbook").where({ id }).del();
+/* ============================================================
+   🗑 DELETE CASHBOOK ENTRY
+============================================================ */
+const deleteCashbook = async (id) => await db("cashbook").where({ id }).del();
+
+/* ============================================================
+   📊 GET DAILY / MONTHLY SUMMARY
+============================================================ */
+const getCashSummary = async (month, year) => {
+  return await db("cashbook")
+    .select(
+      db.raw(
+        `SUM(CASE WHEN entryType = 'income' THEN amount ELSE 0 END) as total_income`
+      ),
+      db.raw(
+        `SUM(CASE WHEN entryType = 'expense' THEN amount ELSE 0 END) as total_expense`
+      ),
+      db.raw(
+        `SUM(CASE WHEN entryType = 'income' THEN amount ELSE -amount END) as net_balance`
+      )
+    )
+    .whereRaw("MONTH(recordDate) = ? AND YEAR(recordDate) = ?", [month, year])
+    .first();
+};
 
 module.exports = {
   getAllCashbook,
@@ -30,4 +74,5 @@ module.exports = {
   createCashbook,
   updateCashbook,
   deleteCashbook,
+  getCashSummary,
 };

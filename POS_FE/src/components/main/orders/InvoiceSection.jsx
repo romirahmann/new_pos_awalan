@@ -1,4 +1,5 @@
 /* eslint-disable no-unused-vars */
+import { useEffect } from "react";
 import { FaPlus, FaMinus, FaTrash } from "react-icons/fa";
 
 export function SummaryRow({ label, value = 0, bold = false }) {
@@ -11,6 +12,9 @@ export function SummaryRow({ label, value = 0, bold = false }) {
 }
 
 export function InvoiceSection({ cart, setCart, handlePayment, saveOrder }) {
+  useEffect(() => {
+    console.log(cart);
+  }, [cart]);
   const updateQty = (cartItemId, delta) => {
     setCart((prev) =>
       prev.map((item) =>
@@ -52,7 +56,7 @@ export function InvoiceSection({ cart, setCart, handlePayment, saveOrder }) {
                 className="flex justify-between items-center bg-gray-700 p-3 rounded-lg"
               >
                 <div>
-                  <h4 className="font-semibold">{item.name}</h4>
+                  <h4 className="font-semibold">{item.productName}</h4>
                   {item.variant && (
                     <p className="text-xs text-gray-400">
                       Varian: {item.variant}

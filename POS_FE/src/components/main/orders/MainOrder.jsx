@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable no-unused-vars */
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -13,7 +14,8 @@ import { ConfirmNewTransactionModal } from "./ConfirmTransaction";
 import api from "../../../services/axios.service";
 import { listenToUpdate } from "../../../services/socket.service";
 import { useAlert } from "../../../store/AlertContext";
-import { useRouter } from "@tanstack/react-router";
+import { useParams, useRouter } from "@tanstack/react-router";
+import { useDispatch, useSelector } from "react-redux";
 
 export function MainOrder() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -27,10 +29,12 @@ export function MainOrder() {
   });
   const { showAlert } = useAlert();
   const router = useRouter();
+  const user = useSelector((state) => state.auth.user);
 
   const fetchOrders = useCallback(async () => {
     try {
       let res = await api.get("/master/transactions");
+
       setOrders(res.data.data);
     } catch (error) {
       console.log(error);
@@ -38,17 +42,23 @@ export function MainOrder() {
   });
 
   useEffect(() => {
-    ["transaction:created", "transaction:update", "transaction:delete"].map(
+    fetchOrders();
+  }, []);
+
+  useEffect(() => {
+    ["transaction:created", "transaction:updated", "transaction:deleted"].map(
       (val) => listenToUpdate(val, fetchOrders)
     );
   }, [fetchOrders]);
 
   const filteredOrders = orders
     .filter((order) =>
-      order.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+      (order?.customerName || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
     )
     .filter((order) =>
-      searchStatus === "ALL" ? true : order.status === searchStatus
+      searchStatus === "ALL" ? true : (order.status || "") === searchStatus
     );
 
   const sortedOrders = [...filteredOrders].sort((a, b) => {
@@ -56,16 +66,23 @@ export function MainOrder() {
       return new Date(b.createdAt) - new Date(a.createdAt);
     if (sortBy === "date_asc")
       return new Date(a.createdAt) - new Date(b.createdAt);
-    if (sortBy === "amount_desc") return b.totalAmount - a.totalAmount;
-    if (sortBy === "name") return a.customerName.localeCompare(b.customerName);
+    if (sortBy === "amount_desc")
+      return (b.totalAmount || 0) - (a.totalAmount || 0);
+    if (sortBy === "name")
+      return (a.customerName || "").localeCompare(b.customerName || "");
     return 0;
   });
 
   const handleAddTransaction = async () => {
     try {
+      let res = await api.post("/master/transaction", { userId: user.userId });
+
       showAlert("success", "Add Transaction Successfully!");
       setModal({ isOpen: false, type: "", selectedData: [] });
-      router.navigate({ to: "order-item" });
+      router.navigate({
+        to: "$transactionId/order-item",
+        params: { transactionId: res.data.data },
+      });
     } catch (error) {
       console.log(error);
     }
@@ -135,11 +152,11 @@ export function MainOrder() {
           />
           <SummaryCard
             title="Pending Orders"
-            value={orders.filter((o) => o.status === "PENDING").length}
+            value={orders.filter((o) => o.status === "pending").length}
           />
           <SummaryCard
             title="Paid Orders"
-            value={orders.filter((o) => o.status === "PAID").length}
+            value={orders.filter((o) => o.status === "paid").length}
           />
         </div>
 

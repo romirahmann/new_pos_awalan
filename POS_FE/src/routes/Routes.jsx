@@ -11,9 +11,10 @@ import { LoginPage } from "../pages/auth/LoginPage";
 import { store } from "../store";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { OrdersPage } from "../pages/main/OrdersPage";
-import { OrderItemPage } from "../components/main/Orders/OrderItemPage";
-import { MainOrder } from "../components/main/Orders/MainOrder";
+
 import { ProductPage } from "../pages/main/ProductsPage";
+import { MainOrder } from "../components/main/orders/MainOrder";
+import { OrderItemPage } from "../components/main/orders/OrderItemPage";
 
 const rootRoute = createRootRoute({
   notFoundComponent: NotFoundPage,
@@ -61,7 +62,7 @@ const mainOrder = createRoute({
 
 const orderItem = createRoute({
   getParentRoute: () => orderPage,
-  path: "main-order/order-item",
+  path: "main-order/$transactionId/order-item",
   component: OrderItemPage,
 });
 

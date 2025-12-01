@@ -1,76 +1,51 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable no-unused-vars */
 import { FaSearch } from "react-icons/fa";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import RightSidebar from "../../../shared/RIghtBar";
+import api from "../../../services/axios.service";
+import { listenToUpdate } from "../../../services/socket.service";
 
 export function MenuSection({ cart, setCart }) {
-  const menuItems = [
-    {
-      id: 1,
-      productId: "P001",
-      name: "Espresso",
-      category: "Coffee",
-      price: 25000,
-      variants: ["Hot", "Ice"],
-    },
-    {
-      id: 2,
-      productId: "P002",
-      name: "Cappuccino",
-      category: "Coffee",
-      price: 30000,
-      variants: ["Hot", "Ice"],
-    },
-    {
-      id: 3,
-      productId: "P003",
-      name: "Latte",
-      category: "Coffee",
-      price: 32000,
-      variants: ["Hot", "Ice"],
-    },
-    {
-      id: 4,
-      productId: "P004",
-      name: "Chocolate Ice",
-      category: "Non-Coffee",
-      price: 28000,
-      variants: ["Hot", "Ice"],
-    },
-    {
-      id: 5,
-      productId: "P005",
-      name: "Croissant",
-      category: "Snack",
-      price: 18000,
-    },
-    {
-      id: 6,
-      productId: "P006",
-      name: "French Fries",
-      category: "Snack",
-      price: 22000,
-    },
-    {
-      id: 7,
-      productId: "P007",
-      name: "Nasi Goreng",
-      category: "Food",
-      price: 35000,
-    },
-  ];
+  const [products, setProducts] = useState([]);
 
   const [rightBar, setRightBar] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [selectedItem, setSelectedItem] = useState(null);
+  const [categoryItem, setCategoryItem] = useState([]);
+  const fetchProduct = useCallback(async () => {
+    try {
+      let res = await api.get("/master/products");
+      setProducts(res?.data?.data || []);
+    } catch (error) {
+      console.log(error);
+      setProducts([]);
+    }
+  }, []);
 
-  // derive categories from data (keeps sync with data)
-  const categories = [
-    "All",
-    ...Array.from(new Set(menuItems.map((m) => m.category))),
-  ];
+  useEffect(() => {
+    fetchProduct();
+    ["product:created", "product:updated", "product:deleted"].forEach((event) =>
+      listenToUpdate(event, fetchProduct)
+    );
+  }, [fetchProduct]);
+
+  // Fetch Kategori dari API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await api.get("/master/categories");
+        setCategoryItem(res.data.data);
+      } catch (error) {
+        console.error("Gagal memuat kategori:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const categories = ["All", ...categoryItem.map((cat) => cat.categoryName)];
 
   // helpers
   const safeNumber = (v) => {
@@ -83,7 +58,6 @@ export function MenuSection({ cart, setCart }) {
   };
 
   const addonsSignature = (addons) => {
-    // create deterministic signature for equality (name+price order matters)
     if (!addons || addons.length === 0) return "no-addons";
     return addons
       .map((a) => `${a.name || ""}:${safeNumber(a.price)}`)
@@ -98,10 +72,10 @@ export function MenuSection({ cart, setCart }) {
   };
 
   // filter
-  const filteredMenu = menuItems.filter(
+  const filteredMenu = products.filter(
     (item) =>
-      (activeCategory === "All" || item.category === activeCategory) &&
-      item.name.toLowerCase().includes(searchTerm.toLowerCase())
+      (activeCategory === "All" || item.categoryName === activeCategory) &&
+      item?.productName?.toLowerCase().includes(searchTerm.toLowerCase() || "")
   );
 
   // open detail with safe defaults
@@ -163,12 +137,12 @@ export function MenuSection({ cart, setCart }) {
     const newItem = {
       cartItemId,
       productId: item.productId,
-      name: item.name,
+      productName: item.productName,
       price: basePrice,
       qty: item.qty || 1,
       variant: item.variant || null,
       note: item.note || "",
-      category: item.category,
+      categoryName: item.categoryName,
       addOns: item.addOns || [],
       totalPrice: basePrice * (item.qty || 1),
     };
@@ -234,8 +208,8 @@ export function MenuSection({ cart, setCart }) {
             onClick={() => handleProductDetail(item)}
             className="p-4 bg-gray-700 hover:bg-gray-600 rounded-xl shadow text-left transition"
           >
-            <h3 className="font-semibold">{item.name}</h3>
-            <p className="text-xs text-gray-400">{item.category}</p>
+            <h3 className="font-semibold">{item.productName}</h3>
+            <p className="text-xs text-gray-400">{item.categoryName}</p>
             <p className="font-bold text-blue-400 mt-1">
               Rp {safeNumber(item.price).toLocaleString()}
             </p>
@@ -256,9 +230,9 @@ export function MenuSection({ cart, setCart }) {
           <div className="flex flex-col h-full text-gray-200">
             {/* Header */}
             <div className="px-5">
-              <h2 className="text-2xl font-bold">{selectedItem.name}</h2>
+              <h2 className="text-2xl font-bold">{selectedItem.productName}</h2>
               <p className="text-sm text-gray-400 mb-2">
-                {selectedItem.category}
+                {selectedItem.categoryName}
               </p>
               <p className="text-xl font-semibold text-blue-400 mb-4">
                 Rp {safeNumber(selectedItem.price).toLocaleString()}
