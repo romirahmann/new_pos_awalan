@@ -49,7 +49,7 @@ const register = async (req, res) => {
       user: { id: result[0], username: data.username },
     });
 
-    return api.success(res, result, "User registered successfully");
+    return api.success(res, { id: result[0], username: data.username });
   } catch (error) {
     console.error("❌ Error register:", error);
     return api.error(res, "Internal Server Error", 500);
@@ -67,7 +67,7 @@ const updateUser = async (req, res) => {
     const existing = await userModel.getById(id);
     if (!existing) return api.error(res, "User not found", 404);
 
-    const result = await userModel.updated(id, data);
+    await userModel.updated(id, data);
 
     emit("user:updated", {
       message: "User data updated",
@@ -75,7 +75,7 @@ const updateUser = async (req, res) => {
       changes: data,
     });
 
-    return api.success(res, result, "User updated successfully");
+    return api.success(res, { id, ...data });
   } catch (error) {
     console.error("❌ Error updateUser:", error);
     return api.error(res, "Internal Server Error", 500);
@@ -92,7 +92,7 @@ const deletedUser = async (req, res) => {
     const user = await userModel.getById(id);
     if (!user) return api.error(res, "User not found", 404);
 
-    const result = await userModel.deleted(id);
+    await userModel.deleted(id);
 
     emit("user:deleted", {
       message: "User deleted",
@@ -100,7 +100,7 @@ const deletedUser = async (req, res) => {
       username: user.username,
     });
 
-    return api.success(res, result, "User deleted successfully");
+    return api.success(res, { id, username: user.username });
   } catch (error) {
     console.error("❌ Error deletedUser:", error);
     return api.error(res, "Internal Server Error", 500);

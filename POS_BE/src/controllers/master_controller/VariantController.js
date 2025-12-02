@@ -7,7 +7,7 @@ const { emit } = require("../../services/socket.service");
 ============================================================ */
 const getAllVariants = async (req, res) => {
   try {
-    const data = await variantModel.getAllVariants();
+    const data = await variantModel.getAllVariants(); // ✔ sesuai model
     return api.success(res, data);
   } catch (error) {
     console.error("❌ getAllVariants error:", error);
@@ -21,7 +21,7 @@ const getAllVariants = async (req, res) => {
 const getVariantsByProduct = async (req, res) => {
   const { productId } = req.params;
   try {
-    const data = await variantModel.getVariantsByProduct(productId);
+    const data = await variantModel.getVariantsByProduct(productId); // ✔ sesuai model
     return api.success(res, data);
   } catch (error) {
     console.error("❌ getVariantsByProduct error:", error);
@@ -35,7 +35,8 @@ const getVariantsByProduct = async (req, res) => {
 const getVariantById = async (req, res) => {
   const { variantId } = req.params;
   try {
-    const data = await variantModel.getVariantById(variantId);
+    const data = await variantModel.getVariantById(variantId); // ✔ sesuai model
+
     if (!data) return api.error(res, "Variant not found", 404);
 
     return api.success(res, data);
@@ -51,7 +52,8 @@ const getVariantById = async (req, res) => {
 const createVariant = async (req, res) => {
   try {
     const data = req.body;
-    const result = await variantModel.createVariant(data);
+
+    const result = await variantModel.createVariant(data); // ✔ sesuai model
 
     emit("variant:created", { id: result[0], ...data });
 
@@ -70,10 +72,10 @@ const updateVariant = async (req, res) => {
   const data = req.body;
 
   try {
-    const existing = await variantModel.getVariantById(variantId);
+    const existing = await variantModel.getVariantById(variantId); // ✔ sesuai model
     if (!existing) return api.error(res, "Variant not found", 404);
 
-    await variantModel.updateVariant(variantId, data);
+    await variantModel.updateVariant(variantId, data); // ✔ sesuai model
 
     emit("variant:updated", { id: variantId, ...data });
 
@@ -91,10 +93,10 @@ const deleteVariant = async (req, res) => {
   const { variantId } = req.params;
 
   try {
-    const existing = await variantModel.getVariantById(variantId);
+    const existing = await variantModel.getVariantById(variantId); // ✔ sesuai model
     if (!existing) return api.error(res, "Variant not found", 404);
 
-    await variantModel.deleteVariant(variantId);
+    await variantModel.deleteVariant(variantId); // ✔ sesuai model
 
     emit("variant:deleted", { id: variantId });
 

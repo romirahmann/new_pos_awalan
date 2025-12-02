@@ -8,7 +8,7 @@ const { emit } = require("../../services/socket.service");
 ============================================================ */
 const getAllTrx = async (req, res) => {
   try {
-    const data = await trxModel.getAllTransaction();
+    const data = await trxModel.getAll();
     return api.success(res, data);
   } catch (error) {
     console.log("❌ getAllTrx error:", error);
@@ -22,11 +22,28 @@ const getAllTrx = async (req, res) => {
 const getTrxById = async (req, res) => {
   const { transactionId } = req.params;
   try {
-    const data = await trxModel.getTransactionById(transactionId);
+    const data = await trxModel.getById(transactionId);
     if (!data) return api.error(res, "Transaction not found", 404);
     return api.success(res, data);
   } catch (error) {
     console.log("❌ getTrxById error:", error);
+    return api.error(res, "Internal Server Error");
+  }
+};
+
+/* ============================================================
+   ✅ GET TRANSACTION BY INVOICE CODE
+============================================================ */
+const getTrxByInvoiceCode = async (req, res) => {
+  const { invoiceCode } = req.params;
+  try {
+    const data = await trxModel.getTransactionDetails(invoiceCode);
+    if (!data || data.length === 0)
+      return api.error(res, "No transaction found", 404);
+
+    return api.success(res, data);
+  } catch (error) {
+    console.log("❌ getTrxByInvoiceCode error:", error);
     return api.error(res, "Internal Server Error");
   }
 };
@@ -37,14 +54,13 @@ const getTrxById = async (req, res) => {
 const createTrx = async (req, res) => {
   let data = req.body;
   try {
-    console.log(data);
     const invoiceCode = await counterModel.generateInvoiceCode();
     data = { ...data, status: "pending", invoiceCode };
 
-    const result = await trxModel.createdTransaction(data);
+    const result = await trxModel.createTransaction(data);
     const id = result[0];
 
-    emit("transaction:created", { id, invoiceCode, ...data });
+    emit("transaction:created", id);
 
     return api.success(res, id);
   } catch (error) {
@@ -54,13 +70,40 @@ const createTrx = async (req, res) => {
 };
 
 /* ============================================================
+   ✅ SAVE TRANSACTION
+============================================================ */
+const saveTrx = async (req, res) => {
+  let { transactionId } = req.params;
+  let data = req.body;
+  try {
+    // console.log(data);
+    const trx = await trxModel.getById(transactionId);
+    if (!trx) {
+      return api.error(res, `Transaction Not Found!`, 500);
+    }
+
+    const result = await trxModel.saveTrx(
+      trx.invoiceCode,
+      data.formData,
+      data.cart
+    );
+
+    emit("transaction:saved", result);
+
+    return api.success(res, "result");
+  } catch (error) {
+    console.log("❌ createTrx error:", error);
+    return api.error(res, "Internal Server Error");
+  }
+};
+/* ============================================================
    ✅ UPDATE TRANSACTION
 ============================================================ */
 const updateTrx = async (req, res) => {
   const { transactionId } = req.params;
   const data = req.body;
   try {
-    const existing = await trxModel.getTransactionById(transactionId);
+    const existing = await trxModel.getById(transactionId);
     if (!existing) return api.error(res, "Transaction not found", 404);
 
     await trxModel.updateTransaction(transactionId, data);
@@ -83,10 +126,10 @@ const updateTrx = async (req, res) => {
 const deleteTrx = async (req, res) => {
   const { transactionId } = req.params;
   try {
-    const existing = await trxModel.getTransactionById(transactionId);
+    const existing = await trxModel.getById(transactionId);
     if (!existing) return api.error(res, "Transaction not found", 404);
 
-    await trxModel.deletedTransaction(transactionId);
+    await trxModel.deleteTransaction(transactionId);
 
     emit("transaction:deleted", { id: transactionId });
 
@@ -98,76 +141,91 @@ const deleteTrx = async (req, res) => {
 };
 
 /* ============================================================
-   ✅ GET TRANSACTION DETAIL BY INVOICE CODE
+   ✅ GET TRANSACTION DETAIL (ITEMS) BY INVOICE CODE
 ============================================================ */
-const getDetailTrx = async (req, res) => {
+const getItems = async (req, res) => {
   const { invoiceCode } = req.params;
   try {
-    const data = await trxModel.getDetailTransaction(invoiceCode);
-    if (!data || data.length === 0)
-      return api.error(res, "No detail found for this invoice", 404);
+    const data = await trxModel.getTransactionDetails(invoiceCode);
     return api.success(res, data);
   } catch (error) {
-    console.log("❌ getDetailTrx error:", error);
+    console.log("❌ getItems error:", error);
     return api.error(res, "Internal Server Error");
   }
 };
 
 /* ============================================================
-   ✅ CREATE TRANSACTION DETAIL
+   ✅ ADD ITEM TO TRANSACTION
 ============================================================ */
-const createDetailTrx = async (req, res) => {
+const addItem = async (req, res) => {
   try {
     const data = req.body;
-    const result = await trxModel.createDetailTransaction(data);
-    const id = result[0];
+    const result = await trxModel.addTransactionItem(data);
 
-    emit("transaction_detail:created", { id, ...data });
+    emit("transaction_item:created", result);
 
-    return api.success(res, { id, ...data }, "Detail added successfully");
+    return api.success(res, result, "Item added successfully");
   } catch (error) {
-    console.log("❌ createDetailTrx error:", error);
+    console.log("❌ addItem error:", error);
     return api.error(res, "Internal Server Error");
   }
 };
 
 /* ============================================================
-   ✅ UPDATE TRANSACTION DETAIL
+   ✅ UPDATE ITEM
 ============================================================ */
-const updateDetailTrx = async (req, res) => {
-  const { transactionId } = req.params;
-  const data = req.body;
-  try {
-    const existing = await trxModel.getDetailById(id);
-    console.log(transactionId, data);
-    // if (!existing) return api.error(res, "Detail not found", 404);
-
-    // await trxModel.updateDetailTransaction(id, data);
-    // emit("transaction_detail:updated", { id, ...data });
-
-    return api.success(res, { id, ...data }, "Detail updated successfully");
-  } catch (error) {
-    console.log("❌ updateDetailTrx error:", error);
-    return api.error(res, "Internal Server Error");
-  }
-};
-
-/* ============================================================
-   ✅ DELETE TRANSACTION DETAIL
-============================================================ */
-const deleteDetailTrx = async (req, res) => {
+const updateItem = async (req, res) => {
   const { id } = req.params;
+  const data = req.body;
+
   try {
-    const existing = await trxModel.getDetailById(id);
-    if (!existing) return api.error(res, "Detail not found", 404);
+    const existing = await trxModel.getTransactionDetails(data.invoiceCode);
+    if (!existing) return api.error(res, "Item not found", 404);
 
-    await trxModel.deleteDetailTransaction(id);
+    await trxModel.updateTransactionItem(id, data);
 
-    emit("transaction_detail:deleted", { id });
+    emit("transaction_item:updated", { id, ...data });
 
-    return api.success(res, "Detail deleted successfully");
+    return api.success(res, { id, ...data }, "Item updated successfully");
   } catch (error) {
-    console.log("❌ deleteDetailTrx error:", error);
+    console.log("❌ updateItem error:", error);
+    return api.error(res, "Internal Server Error");
+  }
+};
+
+/* ============================================================
+   ❌ DELETE ITEM
+============================================================ */
+const deleteItem = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await trxModel.deleteTransactionItem(id);
+
+    emit("transaction_item:deleted", { id });
+
+    return api.success(res, "Item deleted successfully");
+  } catch (error) {
+    console.log("❌ deleteItem error:", error);
+    return api.error(res, "Internal Server Error");
+  }
+};
+
+/* ============================================================
+   ⏰ GET TRANSACTIONS BY DATE
+============================================================ */
+const getTrxByDate = async (req, res) => {
+  const { date } = req.params;
+
+  try {
+    const data = await trxModel.getAll();
+    const filtered = data.filter((trx) =>
+      trx.createdAt.toISOString().startsWith(date)
+    );
+
+    return api.success(res, filtered);
+  } catch (error) {
+    console.log("❌ getTrxByDate error:", error);
     return api.error(res, "Internal Server Error");
   }
 };
@@ -178,11 +236,16 @@ const deleteDetailTrx = async (req, res) => {
 module.exports = {
   getAllTrx,
   getTrxById,
+  getTrxByInvoiceCode,
   createTrx,
   updateTrx,
   deleteTrx,
-  getDetailTrx,
-  createDetailTrx,
-  updateDetailTrx,
-  deleteDetailTrx,
+  saveTrx,
+
+  getItems,
+  addItem,
+  updateItem,
+  deleteItem,
+
+  getTrxByDate,
 };

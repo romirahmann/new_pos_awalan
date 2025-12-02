@@ -19,7 +19,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 export function MainOrder() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchStatus, setSearchStatus] = useState("ALL");
+  const [searchStatus, setSearchStatus] = useState("all");
   const [sortBy, setSortBy] = useState("date_desc");
   const [orders, setOrders] = useState([]);
   const [modal, setModal] = useState({
@@ -58,7 +58,7 @@ export function MainOrder() {
         .includes(searchTerm.toLowerCase())
     )
     .filter((order) =>
-      searchStatus === "ALL" ? true : (order.status || "") === searchStatus
+      searchStatus === "all" ? true : (order.status || "") === searchStatus
     );
 
   const sortedOrders = [...filteredOrders].sort((a, b) => {
@@ -130,9 +130,9 @@ export function MainOrder() {
           {["ALL", "PENDING", "PAID", "CANCELED"].map((status) => (
             <button
               key={status}
-              onClick={() => setSearchStatus(status)}
+              onClick={() => setSearchStatus(status.toLocaleLowerCase())}
               className={`px-4 py-2 rounded-lg text-sm ${
-                searchStatus === status
+                searchStatus === status.toLocaleLowerCase()
                   ? "bg-blue-600 text-white"
                   : "bg-gray-800 text-gray-300"
               }`}
@@ -147,8 +147,8 @@ export function MainOrder() {
           <SummaryCard
             title="Total Revenue"
             value={`Rp ${orders
-              .reduce((a, b) => a + b.totalAmount, 0)
-              .toLocaleString()}`}
+              .reduce((a, b) => a + Number(b.totalAmount), 0)
+              .toLocaleString("id-ID")}`}
           />
           <SummaryCard
             title="Pending Orders"

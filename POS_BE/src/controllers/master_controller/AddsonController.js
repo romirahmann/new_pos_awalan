@@ -7,7 +7,7 @@ const { emit } = require("../../services/socket.service");
 ============================================================ */
 const getAllAddons = async (req, res) => {
   try {
-    const data = await addonModel.getAllAddons();
+    const data = await addonModel.getAllAddons(); // ✔ sesuai model
     return api.success(res, data);
   } catch (error) {
     console.error("❌ getAllAddons error:", error);
@@ -21,7 +21,7 @@ const getAllAddons = async (req, res) => {
 const getAddonsByProduct = async (req, res) => {
   const { productId } = req.params;
   try {
-    const data = await addonModel.getAddonsByProduct(productId);
+    const data = await addonModel.getAddonsByProduct(productId); // ✔ sesuai model
     return api.success(res, data);
   } catch (error) {
     console.error("❌ getAddonsByProduct error:", error);
@@ -35,7 +35,8 @@ const getAddonsByProduct = async (req, res) => {
 const getAddonById = async (req, res) => {
   const { addonId } = req.params;
   try {
-    const data = await addonModel.getAddonById(addonId);
+    const data = await addonModel.getAddonById(addonId); // ✔ sesuai model
+
     if (!data) return api.error(res, "Addon not found", 404);
 
     return api.success(res, data);
@@ -51,7 +52,8 @@ const getAddonById = async (req, res) => {
 const createAddon = async (req, res) => {
   try {
     const data = req.body;
-    const result = await addonModel.createAddon(data);
+
+    const result = await addonModel.createAddon(data); // ✔ sesuai model
 
     emit("addon:created", { id: result[0], ...data });
 
@@ -70,10 +72,10 @@ const updateAddon = async (req, res) => {
   const data = req.body;
 
   try {
-    const existing = await addonModel.getAddonById(addonId);
+    const existing = await addonModel.getAddonById(addonId); // ✔ sesuai model
     if (!existing) return api.error(res, "Addon not found", 404);
 
-    await addonModel.updateAddon(addonId, data);
+    await addonModel.updateAddon(addonId, data); // ✔ sesuai model
 
     emit("addon:updated", { id: addonId, ...data });
 
@@ -91,10 +93,10 @@ const deleteAddon = async (req, res) => {
   const { addonId } = req.params;
 
   try {
-    const existing = await addonModel.getAddonById(addonId);
+    const existing = await addonModel.getAddonById(addonId); // ✔ sesuai model
     if (!existing) return api.error(res, "Addon not found", 404);
 
-    await addonModel.deleteAddon(addonId);
+    await addonModel.deleteAddon(addonId); // ✔ sesuai model
 
     emit("addon:deleted", { id: addonId });
 

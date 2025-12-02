@@ -13,8 +13,7 @@ const getAllVariants = async () =>
       "pv.variantGroup",
       "pv.variantValue",
       "pv.extraPrice",
-      "pv.isActive",
-      "pv.createdAt"
+      "pv.isActive"
     )
     .orderBy("pv.createdAt", "desc");
 
@@ -30,8 +29,7 @@ const getVariantsByProduct = async (productId) =>
       "variantGroup",
       "variantValue",
       "extraPrice",
-      "isActive",
-      "createdAt"
+      "isActive"
     )
     .orderBy("variantGroup", "asc");
 

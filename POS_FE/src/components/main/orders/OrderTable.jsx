@@ -58,15 +58,30 @@ export function OrderTable({ data = [] }) {
     }
   };
 
+  const handleView = async (row) => {
+    try {
+      let res = await api.get(`/master/transactions/${row.invoiceCode}/items`);
+      if (!res) {
+        router.navigate({
+          to: "$transactionId/order-item",
+          params: { transactionId: row.transactionId },
+        });
+        return;
+      }
+
+      router.navigate({
+        to: "$invoiceCode/order-detail",
+        params: { invoiceCode: row.invoiceCode },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const actionRenderer = (row) => (
     <div className="flex gap-2">
       <button
-        onClick={() =>
-          router.navigate({
-            to: "$userId/order-item",
-            params: { userId: row.userId },
-          })
-        }
+        onClick={() => handleView(row)}
         className="text-blue-400 hover:text-blue-300"
       >
         View

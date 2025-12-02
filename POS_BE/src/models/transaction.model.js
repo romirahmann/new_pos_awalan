@@ -1,8 +1,5 @@
 const db = require("../database/db.config");
 
-/* ============================================================
-   📌 Generate Invoice Code (TRX-20250212-0001)
-============================================================ */
 const generateInvoiceCode = async () => {
   const today = new Date().toISOString().split("T")[0];
 
@@ -22,16 +19,70 @@ const generateInvoiceCode = async () => {
   return `TRX-${today.replace(/-/g, "")}-${String(newCount).padStart(4, "0")}`;
 };
 
-/* ============================================================
-   🧾 CREATE NEW TRANSACTION (HEADER)
-============================================================ */
 const createTransaction = async (data) => {
   return await db("transactions").insert(data);
 };
 
-/* ============================================================
-   📦 GET ALL TRANSACTIONS
-============================================================ */
+const saveTrx = async (invoiceCode, formData, cart) => {
+  const trx = await db.transaction();
+
+  try {
+    // ======================================================
+    // 1️⃣ UPDATE TRANSACTION
+    // ======================================================
+    await trx("transactions").where({ invoiceCode }).update(formData);
+
+    // ======================================================
+    // 2️⃣ PROCESS CART ITEMS
+    // ======================================================
+    for (const item of cart) {
+      // 2.1 INSERT TRANSACTION ITEM
+      const itemPayload = {
+        invoiceCode,
+        productId: item.productId,
+        quantity: item.qty,
+        basePrice: item.price,
+        subtotal: item.totalPrice,
+        note: item.note || "",
+      };
+
+      const [id] = await trx("transaction_items").insert(itemPayload);
+
+      // ======================================================
+      // 2.2 INSERT VARIANT (if exists) -> USE YOUR TABLE STRUCTURE
+      // ======================================================
+      if (item.variant) {
+        await trx("transaction_item_variants").insert({
+          variantName: item.variant,
+          transactionItemId: id,
+          variantPrice: item.variant.variantPrice || 0,
+        });
+      }
+
+      // ======================================================
+      // 2.3 INSERT ADDONS (if exists) -> USE YOUR TABLE STRUCTURE
+      // ======================================================
+      if (item.selectedAddons && item.selectedAddons.length > 0) {
+        for (const addon of item.selectedAddons) {
+          await trx("transaction_item_addons").insert({
+            transactionItemId: id,
+            addonName: addon.addonName,
+            addonPrice: addon.addonPrice || 0,
+            quantity: addon.quantity || 1,
+          });
+        }
+      }
+    }
+
+    await trx.commit();
+
+    return trx;
+  } catch (error) {
+    console.error(error);
+    await trx.rollback();
+  }
+};
+
 const getAll = async () => {
   return await db("transactions as t")
     .leftJoin("users as u", "t.userId", "u.userId")
@@ -42,19 +93,18 @@ const getAll = async () => {
       "t.paymentType",
       "t.status",
       "t.totalAmount",
-      "t.createdAt",
-      "u.fullName as cashier"
+      "t.discount",
+      "t.tax",
+      "t.customerName",
+      "t.createdAt"
     )
     .orderBy("t.createdAt", "desc");
 };
 
-/* ============================================================
-   🔍 GET TRANSACTION BY ID
-============================================================ */
 const getById = async (transactionId) => {
   const trx = await db("transactions as t")
     .leftJoin("users as u", "t.userId", "u.userId")
-    .select("t.*", "u.fullName as cashier")
+    .select("t.*", "u.fullName")
     .where({ transactionId })
     .first();
 
@@ -66,22 +116,19 @@ const getById = async (transactionId) => {
   return trx;
 };
 
-/* ============================================================
-   📝 UPDATE TRANSACTION
-============================================================ */
 const updateTransaction = async (transactionId, data) =>
   await db("transactions").where({ transactionId }).update(data);
 
-/* ============================================================
-   ❌ DELETE TRANSACTION
-============================================================ */
 const deleteTransaction = async (transactionId) =>
   await db("transactions").where({ transactionId }).del();
 
-/* ============================================================
-   📌 GET FULL TRANSACTION (DETAIL)
-============================================================ */
 const getTransactionDetails = async (invoiceCode) => {
+  const trx = await db("transactions as t")
+    .leftJoin("users as u", "t.userId", "u.userId")
+    .select("t.*", "u.fullName")
+    .where({ invoiceCode })
+    .first();
+  // Ambil semua item transaksi
   const items = await db("transaction_items as ti")
     .leftJoin("products as p", "p.productId", "ti.productId")
     .select(
@@ -98,22 +145,17 @@ const getTransactionDetails = async (invoiceCode) => {
 
   for (const item of items) {
     item.variants = await db("transaction_item_variants as tiv")
-      .leftJoin("product_variants as pv", "pv.variantId", "tiv.variantId")
-      .select("pv.variantGroup", "pv.variantValue", "tiv.variantPrice")
+      .select("tiv.id", "tiv.variantName", "tiv.variantPrice")
       .where("tiv.transactionItemId", item.id);
 
     item.addons = await db("transaction_item_addons as tia")
-      .leftJoin("product_addons as pa", "pa.addonId", "tia.addonId")
-      .select("pa.addonName", "tia.addonPrice", "tia.quantity")
+      .select("tia.id", "tia.addonName", "tia.addonPrice", "tia.quantity")
       .where("tia.transactionItemId", item.id);
   }
 
-  return items;
+  return { trx, items };
 };
 
-/* ============================================================
-   ➕ ADD ITEM TO TRANSACTION (+auto calculate subtotal)
-============================================================ */
 const addTransactionItem = async (data) => {
   const product = await db("products")
     .where({ productId: data.productId })
@@ -135,15 +177,9 @@ const addTransactionItem = async (data) => {
   return { id, ...data, basePrice, subtotal };
 };
 
-/* ============================================================
-   ✏ UPDATE ITEM
-============================================================ */
 const updateTransactionItem = async (id, data) =>
   await db("transaction_items").where({ id }).update(data);
 
-/* ============================================================
-   ❌ DELETE ITEM
-============================================================ */
 const deleteTransactionItem = async (id) =>
   await db("transaction_items").where({ id }).del();
 
@@ -158,4 +194,5 @@ module.exports = {
   addTransactionItem,
   updateTransactionItem,
   deleteTransactionItem,
+  saveTrx,
 };

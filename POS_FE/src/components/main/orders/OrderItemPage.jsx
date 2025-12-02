@@ -5,16 +5,22 @@ import { InvoiceSection } from "./InvoiceSection";
 import RightSidebar from "../../../shared/RIghtBar";
 import api from "../../../services/axios.service";
 import { useParams } from "@tanstack/react-router";
+import { useAlert } from "../../../store/AlertContext";
+import { useSelector } from "react-redux";
 
 export function OrderItemPage() {
   const [modal, setModal] = useState(false);
   const [cart, setCart] = useState([]);
   const [formData, setFormData] = useState({
     customerName: "",
-    paymentType: "Cash",
-    orderType: "Dine In",
+    paymentType: "cash",
+    orderType: "dinein",
     notes: "",
+    userId: null,
   });
+  const { userId } = useSelector((state) => state.auth.user);
+  const { showAlert } = useAlert();
+
   const { transactionId } = useParams([]);
   useEffect(() => {}, []);
 
@@ -24,6 +30,7 @@ export function OrderItemPage() {
       discount: val.discount,
       totalAmount: val.grandTotal,
       subTotal: val.subtotal,
+      userId: userId || null,
     });
     setModal(true);
   };
@@ -36,7 +43,12 @@ export function OrderItemPage() {
   const saveOrder = async (e) => {
     e.preventDefault();
     try {
-      let res = await api.post();
+      await api.put(`/master/save-transaction/${transactionId}`, {
+        cart,
+        formData,
+      });
+      showAlert("success", "Save Order Successfully!");
+      setModal(false);
     } catch (error) {
       console.log(error);
     }

@@ -9,18 +9,19 @@ import { listenToUpdate } from "../../../services/socket.service";
 
 export function MenuSection({ cart, setCart }) {
   const [products, setProducts] = useState([]);
-
   const [rightBar, setRightBar] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [selectedItem, setSelectedItem] = useState(null);
   const [categoryItem, setCategoryItem] = useState([]);
+
+  // Fetch products
   const fetchProduct = useCallback(async () => {
     try {
-      let res = await api.get("/master/products");
+      const res = await api.get("/master/products");
       setProducts(res?.data?.data || []);
     } catch (error) {
-      console.log(error);
+      console.error(error);
       setProducts([]);
     }
   }, []);
@@ -32,7 +33,7 @@ export function MenuSection({ cart, setCart }) {
     );
   }, [fetchProduct]);
 
-  // Fetch Kategori dari API
+  // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -47,93 +48,65 @@ export function MenuSection({ cart, setCart }) {
 
   const categories = ["All", ...categoryItem.map((cat) => cat.categoryName)];
 
-  // helpers
+  // Helpers
   const safeNumber = (v) => {
     const n = Number(v);
     return Number.isNaN(n) ? 0 : n;
   };
 
   const addonsTotal = (addons) => {
-    return (addons || []).reduce((s, a) => s + safeNumber(a.price), 0);
-  };
-
-  const addonsSignature = (addons) => {
-    if (!addons || addons.length === 0) return "no-addons";
-    return addons
-      .map((a) => `${a.name || ""}:${safeNumber(a.price)}`)
-      .join("|");
+    return (addons || []).reduce((sum, a) => sum + safeNumber(a.price), 0);
   };
 
   const computeCartItemId = (item) => {
-    const sig = addonsSignature(item.addOns);
     const note = (item.note || "").replace(/\s+/g, "_");
     const variant = item.variant || "no-variant";
-    return `${item.productId}-${variant}-${sig}-${note}`;
+    const addonIds =
+      item.selectedAddons && item.selectedAddons.length > 0
+        ? item.selectedAddons.map((a) => a.addonId).join("-")
+        : "no-addon";
+    return `${item.productId}-${variant}-${addonIds}-${note}`;
   };
 
-  // filter
+  // Filtered menu
   const filteredMenu = products.filter(
     (item) =>
       (activeCategory === "All" || item.categoryName === activeCategory) &&
-      item?.productName?.toLowerCase().includes(searchTerm.toLowerCase() || "")
+      item?.productName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // open detail with safe defaults
+  // Open product detail
   const handleProductDetail = (item) => {
     setSelectedItem({
       ...item,
       qty: 1,
-      variant: item.variants ? item.variants[0] : null,
+      variant: "", // default selected variant
+      variants: item.variants || [],
       note: "",
-      addOns: [],
+      selectedAddons: [], // default empty array
     });
     setRightBar(true);
   };
 
-  // add empty addon row
-  const addAddon = () =>
-    setSelectedItem((prev) => ({
-      ...prev,
-      addOns: [...(prev.addOns || []), { id: Date.now(), name: "", price: 0 }],
-    }));
-
-  // update addon by index
-  const updateAddon = (index, field, value) =>
-    setSelectedItem((prev) => {
-      const newAddons = [...(prev.addOns || [])];
-      newAddons[index] = {
-        ...newAddons[index],
-        [field]: field === "price" ? safeNumber(value) : value,
-      };
-      return { ...prev, addOns: newAddons };
-    });
-
-  // remove addon by index
-  const removeAddon = (index) =>
-    setSelectedItem((prev) => ({
-      ...prev,
-      addOns: (prev.addOns || []).filter((_, i) => i !== index),
-    }));
-
-  // update qty
+  // Update quantity
   const updateQty = (delta) =>
     setSelectedItem((prev) => ({
       ...prev,
       qty: Math.max(1, (prev.qty || 1) + delta),
     }));
 
-  // calculate final price for the selected item (including addons)
+  // Calculate total price
   const selectedFinalPrice = () => {
     if (!selectedItem) return 0;
     const base = safeNumber(selectedItem.price);
-    const add = addonsTotal(selectedItem.addOns);
+    const add = addonsTotal(selectedItem.selectedAddons);
     return (base + add) * (selectedItem.qty || 1);
   };
 
-  // add to cart (merge if same cartItemId exists)
+  // Add to cart
   const addToCart = (item) => {
     const cartItemId = computeCartItemId(item);
-    const basePrice = safeNumber(item.price) + addonsTotal(item.addOns);
+    const basePrice = safeNumber(item.price) + addonsTotal(item.selectedAddons);
     const newItem = {
       cartItemId,
       productId: item.productId,
@@ -143,14 +116,13 @@ export function MenuSection({ cart, setCart }) {
       variant: item.variant || null,
       note: item.note || "",
       categoryName: item.categoryName,
-      addOns: item.addOns || [],
+      selectedAddons: item.selectedAddons || [],
       totalPrice: basePrice * (item.qty || 1),
     };
 
     setCart((prev) => {
       const exists = prev.find((c) => c.cartItemId === cartItemId);
       if (!exists) return [...prev, newItem];
-      // merge qty
       return prev.map((c) =>
         c.cartItemId === cartItemId
           ? {
@@ -256,75 +228,91 @@ export function MenuSection({ cart, setCart }) {
             </div>
 
             {/* Variant */}
-            {selectedItem.variants && (
+            {selectedItem.variants.length > 0 && (
               <div className="px-5 mb-4">
                 <label className="text-sm mb-2 block">Pilih Variant</label>
                 <div className="space-y-2">
-                  {selectedItem.variants.map((variant) => (
+                  {selectedItem.variants.map((variantObj) => (
                     <label
-                      key={variant}
+                      key={variantObj.variantId}
                       className="flex items-center gap-3 bg-gray-700 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-600"
                     >
                       <input
                         type="radio"
                         name="variant"
-                        value={variant}
-                        checked={selectedItem.variant === variant}
+                        value={variantObj.variantValue}
+                        checked={
+                          selectedItem.variant === variantObj.variantValue
+                        }
                         onChange={() =>
-                          setSelectedItem((p) => ({ ...p, variant }))
+                          setSelectedItem((p) => ({
+                            ...p,
+                            variant: variantObj.variantValue,
+                          }))
                         }
                       />
-                      <span>{variant}</span>
+                      <span>{variantObj.variantValue}</span>
                     </label>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Add-Ons Manual */}
-            <div className="px-4 mx-5 mb-4 bg-gray-700 p-3 rounded-lg">
-              <div className="flex justify-between mb-2">
-                <span className="font-semibold">Add-On Manual</span>
-                <button
-                  onClick={addAddon}
-                  className="text-sm bg-blue-600 px-2 py-1 rounded"
-                >
-                  + Add
-                </button>
-              </div>
-
-              {(selectedItem.addOns || []).map((addon, idx) => (
-                <div key={idx} className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    placeholder="Nama Add-on"
-                    value={addon.name}
-                    onChange={(e) => updateAddon(idx, "name", e.target.value)}
-                    className="flex-1 p-2 bg-gray-600 rounded"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Harga"
-                    value={addon.price}
-                    onChange={(e) => updateAddon(idx, "price", e.target.value)}
-                    className="w-28 p-2 bg-gray-600 rounded"
-                  />
-                  <button
-                    onClick={() => removeAddon(idx)}
-                    className="text-red-400"
-                  >
-                    ✕
-                  </button>
+            {/* Add-Ons */}
+            {selectedItem.addons?.length > 0 && (
+              <div className="px-5 mb-4">
+                <label className="text-sm mb-2 block">Pilih Add-On</label>
+                <div className="space-y-2">
+                  {selectedItem.addons.map((addon) => {
+                    const isChecked = selectedItem.selectedAddons?.some(
+                      (a) => a.addonId === addon.addonId
+                    );
+                    return (
+                      <label
+                        key={addon.addonId}
+                        className="flex items-center gap-3 bg-gray-700 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-600"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked || false}
+                          onChange={() => {
+                            setSelectedItem((prev) => {
+                              const selected = prev.selectedAddons || [];
+                              if (isChecked) {
+                                // remove
+                                return {
+                                  ...prev,
+                                  selectedAddons: selected.filter(
+                                    (a) => a.addonId !== addon.addonId
+                                  ),
+                                };
+                              } else {
+                                // add
+                                return {
+                                  ...prev,
+                                  selectedAddons: [...selected, addon],
+                                };
+                              }
+                            });
+                          }}
+                        />
+                        <span>
+                          {addon.addonName} + Rp{" "}
+                          {safeNumber(addon.price).toLocaleString()}
+                        </span>
+                      </label>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
 
             {/* Note */}
             <div className="px-5 mb-4">
               <label className="text-sm mb-2 block">Catatan</label>
               <textarea
                 placeholder="Tanpa gula, ekstra es, dll..."
-                value={selectedItem.note}
+                value={selectedItem.note || ""}
                 onChange={(e) =>
                   setSelectedItem((p) => ({ ...p, note: e.target.value }))
                 }

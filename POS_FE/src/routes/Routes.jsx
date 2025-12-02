@@ -15,6 +15,7 @@ import { OrdersPage } from "../pages/main/OrdersPage";
 import { ProductPage } from "../pages/main/ProductsPage";
 import { MainOrder } from "../components/main/orders/MainOrder";
 import { OrderItemPage } from "../components/main/orders/OrderItemPage";
+import { OrderDetail } from "../components/main/orders/OrderDetail";
 
 const rootRoute = createRootRoute({
   notFoundComponent: NotFoundPage,
@@ -66,10 +67,16 @@ const orderItem = createRoute({
   component: OrderItemPage,
 });
 
+const orderDetail = createRoute({
+  getParentRoute: () => orderPage,
+  path: "main-order/$invoiceCode/order-detail",
+  component: OrderDetail,
+});
+
 const routeTree = rootRoute.addChildren([
   adminLayout.addChildren([
     productPage,
-    orderPage.addChildren([mainOrder, orderItem]),
+    orderPage.addChildren([mainOrder, orderItem, orderDetail]),
   ]),
   loginPage,
 ]);
