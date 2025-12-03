@@ -104,7 +104,6 @@ const checkOutTrx = async (req, res) => {
   let { transactionId } = req.params;
   let data = req.body;
   try {
-    // console.log(data);
     const trx = await trxModel.getById(transactionId);
     if (!trx) {
       return api.error(res, `Transaction Not Found!`, 500);

@@ -14,6 +14,7 @@ const getAll = async () => {
       "p.cost",
       "p.productDesc",
       "p.isActive",
+      "p.discount",
       "p.createdAt",
       "c.categoryId",
       "c.categoryName"
@@ -59,6 +60,7 @@ const getById = async (productId) => {
       "p.price",
       "p.cost",
       "p.productDesc",
+      "p.discount",
       "p.isActive",
       "p.createdAt",
       "c.categoryId",
@@ -134,6 +136,7 @@ const getByCategory = async (categoryId) =>
       "p.productName",
       "p.price",
       "p.productDesc",
+      "p.discount",
       "c.categoryName"
     )
     .orderBy("p.productName", "asc");

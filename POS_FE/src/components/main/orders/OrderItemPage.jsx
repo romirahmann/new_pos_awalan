@@ -11,27 +11,35 @@ import { useSelector } from "react-redux";
 export function OrderItemPage() {
   const [modal, setModal] = useState(false);
   const [cart, setCart] = useState([]);
+
+  // FIX: pastikan semua field ada default value
   const [formData, setFormData] = useState({
     customerName: "",
     paymentType: "cash",
     orderType: "dinein",
     notes: "",
     userId: null,
+    discount: 0,
+    totalAmount: 0,
+    subTotal: 0,
   });
+
   const { userId } = useSelector((state) => state.auth.user);
   const { showAlert } = useAlert();
   const route = useRouter();
   const { transactionId } = useParams([]);
+
   useEffect(() => {}, []);
 
   const handlePaymentMethod = (val) => {
-    setFormData({
-      ...formData,
-      discount: val.discount,
-      totalAmount: val.grandTotal,
-      subTotal: val.subtotal,
+    setFormData((prev) => ({
+      ...prev,
+      discount: val.discount ?? prev.discount,
+      totalAmount: val.grandTotal ?? 0,
+      subTotal: val.subtotal ?? 0,
       userId: userId || null,
-    });
+    }));
+
     setModal(true);
   };
 
@@ -47,8 +55,8 @@ export function OrderItemPage() {
         cart,
         formData,
       });
-      showAlert("success", "Save Order Successfully!");
 
+      showAlert("success", "Save Order Successfully!");
       setModal(false);
       route.navigate({ to: "/orders/main-order" });
     } catch (error) {
@@ -70,6 +78,7 @@ export function OrderItemPage() {
       {/* RIGHT SIDEBAR */}
       <RightSidebar isOpen={modal} onClose={() => setModal(false)}>
         <div className="p-5 space-y-4 text-gray-200">
+          {/* CUSTOMER NAME */}
           <div>
             <label className="block text-sm mb-1">Customer Name</label>
             <input
@@ -83,7 +92,7 @@ export function OrderItemPage() {
             />
           </div>
 
-          {/* ORDER TYPE CARD RADIO */}
+          {/* ORDER TYPE */}
           <div>
             <label className="block text-sm mb-2">Order Type</label>
             <div className="grid grid-cols-2 gap-3">
@@ -91,11 +100,11 @@ export function OrderItemPage() {
                 <label
                   key={type}
                   className={`p-4 rounded-lg cursor-pointer border flex flex-col items-center justify-center transition 
-            ${
-              formData.orderType === type
-                ? "bg-blue-600 border-blue-400"
-                : "bg-gray-700 border-gray-600 hover:bg-gray-600"
-            }`}
+                    ${
+                      formData.orderType === type
+                        ? "bg-blue-600 border-blue-400"
+                        : "bg-gray-700 border-gray-600 hover:bg-gray-600"
+                    }`}
                 >
                   <input
                     type="radio"
@@ -113,6 +122,7 @@ export function OrderItemPage() {
             </div>
           </div>
 
+          {/* PAYMENT TYPE */}
           <div>
             <label className="block text-sm mb-1">Payment Type</label>
             <select
@@ -127,6 +137,26 @@ export function OrderItemPage() {
             </select>
           </div>
 
+          {/* DISCOUNT */}
+          <div>
+            <label className="block text-sm mb-1">
+              Promo / Discount Transaksi (%)
+            </label>
+            <input
+              type="number"
+              className="w-full p-2 rounded bg-gray-700"
+              value={formData.discount}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  discount: Number(e.target.value) || 0,
+                })
+              }
+              placeholder="Contoh: 10 untuk 10%"
+            />
+          </div>
+
+          {/* NOTES */}
           <div>
             <label className="block text-sm mb-1">Catatan (Opsional)</label>
             <textarea
@@ -140,6 +170,7 @@ export function OrderItemPage() {
             ></textarea>
           </div>
 
+          {/* BUTTONS */}
           <div className="flex gap-2">
             <button
               className="w-full bg-green-600 hover:bg-green-700 py-3 rounded-lg font-semibold mt-4"

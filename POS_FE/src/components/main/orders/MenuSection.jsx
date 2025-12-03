@@ -19,6 +19,7 @@ export function MenuSection({ cart, setCart }) {
   const fetchProduct = useCallback(async () => {
     try {
       const res = await api.get("/master/products");
+      // console.log("products:", res.data.data);
       setProducts(res?.data?.data || []);
     } catch (error) {
       console.error(error);
@@ -118,6 +119,7 @@ export function MenuSection({ cart, setCart }) {
       categoryName: item.categoryName,
       selectedAddons: item.selectedAddons || [],
       totalPrice: basePrice * (item.qty || 1),
+      discountProduct: item.discount,
     };
 
     setCart((prev) => {

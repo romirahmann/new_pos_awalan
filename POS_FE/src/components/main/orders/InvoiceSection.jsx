@@ -21,19 +21,30 @@ export function InvoiceSection({ cart, setCart, handlePayment, saveOrder }) {
     return Number.isNaN(n) ? 0 : n;
   };
 
+  // =============================
+  // UPDATE QTY + HITUNG DISKON
+  // =============================
   const updateQty = (cartItemId, delta) => {
     setCart((prev) =>
       prev.map((item) => {
         if (item.cartItemId === cartItemId) {
           const qty = Math.max(1, item.qty + delta);
+
           const addonsTotal = (item.selectedAddons || []).reduce(
             (s, a) => s + safeNumber(a.price),
             0
           );
+
+          const price = safeNumber(item.price);
+          const discountPercent = safeNumber(item.discountProduct || 0);
+          const discountNominal = price * (discountPercent / 100); // rumus diskon %
+
+          const finalPricePerItem = price + addonsTotal - discountNominal;
+
           return {
             ...item,
             qty,
-            totalPrice: (safeNumber(item.price) + addonsTotal) * qty,
+            totalPrice: finalPricePerItem * qty,
           };
         }
         return item;
@@ -41,13 +52,35 @@ export function InvoiceSection({ cart, setCart, handlePayment, saveOrder }) {
     );
   };
 
+  // =============================
+  // REMOVE ITEM CART
+  // =============================
   const removeItem = (cartItemId) => {
     setCart((prev) => prev.filter((item) => item.cartItemId !== cartItemId));
   };
 
-  const subtotal = cart.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
-  const discount = subtotal > 100000 ? 10000 : 0;
-  const grandTotal = subtotal - discount;
+  // =============================
+  // HITUNG SUBTOTAL (harga asli + addons)
+  // =============================
+  const subtotal = cart.reduce((sum, item) => {
+    const addonsTotal = (item.selectedAddons || []).reduce(
+      (s, a) => s + safeNumber(a.price),
+      0
+    );
+    return sum + (safeNumber(item.price) + addonsTotal) * item.qty;
+  }, 0);
+
+  // =============================
+  // HITUNG TOTAL DISCOUNT (berdasarkan persentase)
+  // =============================
+  const totalDiscount = cart.reduce((sum, item) => {
+    const price = safeNumber(item.price);
+    const discountPercent = safeNumber(item.discountProduct || 0);
+    const discountNominal = price * (discountPercent / 100);
+    return sum + discountNominal * item.qty;
+  }, 0);
+
+  const grandTotal = subtotal - totalDiscount;
 
   return (
     <div className="bg-gray-800 p-5 rounded-xl shadow-lg flex flex-col overflow-hidden h-full">
@@ -57,86 +90,107 @@ export function InvoiceSection({ cart, setCart, handlePayment, saveOrder }) {
         <p className="text-gray-400">Keranjang masih kosong...</p>
       ) : (
         <>
-          {/* Cart Items */}
+          {/* ================================
+              CART ITEMS LIST
+          =================================== */}
           <div className="space-y-3 flex-1 overflow-y-auto custom-scroll pr-1">
-            {cart.map((item) => (
-              <div
-                key={item.cartItemId}
-                className="flex justify-between items-center bg-gray-700 p-3 rounded-lg"
-              >
-                <div>
-                  <h4 className="font-semibold">{item.productName}</h4>
+            {cart.map((item) => {
+              const price = safeNumber(item.price);
+              const discountPercent = safeNumber(item.discountProduct || 0);
+              const discountNominal = price * (discountPercent / 100);
 
-                  {item.variant && (
-                    <p className="text-xs text-gray-400">
-                      Varian: {item.variant}
+              return (
+                <div
+                  key={item.cartItemId}
+                  className="flex justify-between items-center bg-gray-700 p-3 rounded-lg"
+                >
+                  <div>
+                    <h4 className="font-semibold">{item.productName}</h4>
+
+                    {item.variant && (
+                      <p className="text-xs text-gray-400">
+                        Varian: {item.variant}
+                      </p>
+                    )}
+
+                    {item.selectedAddons?.length > 0 && (
+                      <p className="text-xs text-gray-400">
+                        Add-ons:{" "}
+                        {item.selectedAddons
+                          .map(
+                            (a) =>
+                              `${a.addonName} (+Rp ${safeNumber(
+                                a.price
+                              ).toLocaleString()})`
+                          )
+                          .join(", ")}
+                      </p>
+                    )}
+
+                    {item.note && (
+                      <p className="text-xs text-gray-400">Note: {item.note}</p>
+                    )}
+
+                    <p className="text-sm text-gray-400">
+                      Harga: Rp {price.toLocaleString()}
                     </p>
-                  )}
 
-                  {item.selectedAddons?.length > 0 && (
-                    <p className="text-xs text-gray-400">
-                      Add-ons:{" "}
-                      {item.selectedAddons
-                        .map(
-                          (a) =>
-                            `${a.addonName} (+Rp ${safeNumber(
-                              a.price
-                            ).toLocaleString()})`
-                        )
-                        .join(", ")}
-                    </p>
-                  )}
+                    {discountPercent > 0 && (
+                      <p className="text-xs text-green-400">
+                        Diskon: {discountPercent}% (-Rp{" "}
+                        {discountNominal.toLocaleString()})
+                      </p>
+                    )}
+                  </div>
 
-                  {item.note && (
-                    <p className="text-xs text-gray-400">Note: {item.note}</p>
-                  )}
+                  {/* QTY BUTTONS */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => updateQty(item.cartItemId, -1)}
+                      className="p-2 bg-gray-600 rounded-full hover:bg-gray-500"
+                    >
+                      <FaMinus size={12} />
+                    </button>
 
-                  <p className="text-sm text-gray-400">
-                    Harga per item: Rp {safeNumber(item.price).toLocaleString()}
-                  </p>
+                    <span className="font-bold">{item.qty}</span>
+
+                    <button
+                      onClick={() => updateQty(item.cartItemId, 1)}
+                      className="p-2 bg-gray-600 rounded-full hover:bg-gray-500"
+                    >
+                      <FaPlus size={12} />
+                    </button>
+
+                    <button
+                      onClick={() => removeItem(item.cartItemId)}
+                      className="p-2 bg-red-600 text-white rounded-full hover:bg-red-500"
+                    >
+                      <FaTrash size={12} />
+                    </button>
+                  </div>
                 </div>
-
-                {/* Qty & Actions */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => updateQty(item.cartItemId, -1)}
-                    className="p-2 bg-gray-600 rounded-full hover:bg-gray-500"
-                  >
-                    <FaMinus size={12} />
-                  </button>
-
-                  <span className="font-bold">{item.qty}</span>
-
-                  <button
-                    onClick={() => updateQty(item.cartItemId, 1)}
-                    className="p-2 bg-gray-600 rounded-full hover:bg-gray-500"
-                  >
-                    <FaPlus size={12} />
-                  </button>
-
-                  <button
-                    onClick={() => removeItem(item.cartItemId)}
-                    className="p-2 bg-red-600 text-white rounded-full hover:bg-red-500"
-                  >
-                    <FaTrash size={12} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          {/* Summary */}
+          {/* ================================
+              SUMMARY
+          =================================== */}
           <div className="mt-6 p-4 bg-gray-700 rounded-lg space-y-2">
             <SummaryRow label="Subtotal" value={subtotal} />
-            <SummaryRow label="Diskon" value={discount} />
+            <SummaryRow label="Diskon" value={totalDiscount} />
             <hr className="border-gray-600" />
             <SummaryRow label="Total" value={grandTotal} bold />
           </div>
 
-          {/* Payment */}
+          {/* ================================
+              PAYMENT BUTTON
+          =================================== */}
           <div className="mt-4 flex gap-3">
             <button
-              onClick={() => handlePayment({ subtotal, grandTotal, discount })}
+              onClick={() =>
+                handlePayment({ subtotal, grandTotal, totalDiscount })
+              }
               className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg"
             >
               Bayar
