@@ -204,7 +204,7 @@ CREATE TABLE `transaction_item_addons` (
   PRIMARY KEY (`id`),
   KEY `transactionItemId` (`transactionItemId`),
   CONSTRAINT `transaction_item_addons_ibfk_1` FOREIGN KEY (`transactionItemId`) REFERENCES `transaction_items` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -213,7 +213,7 @@ CREATE TABLE `transaction_item_addons` (
 
 LOCK TABLES `transaction_item_addons` WRITE;
 /*!40000 ALTER TABLE `transaction_item_addons` DISABLE KEYS */;
-INSERT INTO `transaction_item_addons` VALUES (1,6,0.00,1,'Non Sugar'),(2,7,0.00,1,'Sugar');
+INSERT INTO `transaction_item_addons` VALUES (1,6,0.00,1,'Non Sugar'),(2,7,0.00,1,'Sugar'),(3,8,0.00,1,'Sugar'),(4,9,0.00,1,'Sugar'),(5,10,0.00,1,'Non Sugar'),(6,11,0.00,1,'Non Sugar'),(7,12,0.00,1,'Non Sugar'),(8,13,0.00,1,'Non Sugar'),(9,14,0.00,1,'Sugar'),(10,15,0.00,1,'Less Sugar'),(11,16,0.00,1,'Non Sugar');
 /*!40000 ALTER TABLE `transaction_item_addons` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -232,7 +232,7 @@ CREATE TABLE `transaction_item_variants` (
   PRIMARY KEY (`id`),
   KEY `transactionItemId` (`transactionItemId`),
   CONSTRAINT `transaction_item_variants_ibfk_1` FOREIGN KEY (`transactionItemId`) REFERENCES `transaction_items` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -241,7 +241,7 @@ CREATE TABLE `transaction_item_variants` (
 
 LOCK TABLES `transaction_item_variants` WRITE;
 /*!40000 ALTER TABLE `transaction_item_variants` DISABLE KEYS */;
-INSERT INTO `transaction_item_variants` VALUES (2,6,0.00,'Iced'),(3,7,0.00,'Iced');
+INSERT INTO `transaction_item_variants` VALUES (2,6,0.00,'Iced'),(3,7,0.00,'Iced'),(4,8,0.00,'Iced'),(5,9,0.00,'Iced'),(6,10,0.00,'Hot'),(7,11,0.00,'Hot'),(8,12,0.00,'Iced'),(9,13,0.00,'Hot'),(10,14,0.00,'Iced'),(11,15,0.00,'Iced'),(12,16,0.00,'Iced');
 /*!40000 ALTER TABLE `transaction_item_variants` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -265,7 +265,7 @@ CREATE TABLE `transaction_items` (
   KEY `productId` (`productId`),
   CONSTRAINT `transaction_items_ibfk_1` FOREIGN KEY (`invoiceCode`) REFERENCES `transactions` (`invoiceCode`) ON DELETE CASCADE,
   CONSTRAINT `transaction_items_ibfk_2` FOREIGN KEY (`productId`) REFERENCES `products` (`productId`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -274,7 +274,7 @@ CREATE TABLE `transaction_items` (
 
 LOCK TABLES `transaction_items` WRITE;
 /*!40000 ALTER TABLE `transaction_items` DISABLE KEYS */;
-INSERT INTO `transaction_items` VALUES (6,'AWLN-251202-0001',1,2,15000.00,30000.00,''),(7,'AWLN-251202-0001',2,1,18000.00,18000.00,'Normal');
+INSERT INTO `transaction_items` VALUES (6,'AWLN-251202-0001',1,2,15000.00,30000.00,''),(7,'AWLN-251202-0001',2,1,18000.00,18000.00,'Normal'),(8,'AWLN-251202-0002',6,1,18000.00,18000.00,''),(9,'AWLN-251202-0002',2,1,18000.00,18000.00,''),(10,'AWLN-251202-0002',14,2,15000.00,30000.00,'suhu 88'),(11,'AWLN-251203-0001',13,1,20000.00,20000.00,''),(12,'AWLN-251203-0001',14,1,15000.00,15000.00,'Puntang'),(13,'AWLN-251203-0001',14,1,15000.00,15000.00,'Ciwidey'),(14,'AWLN-251203-0001',2,1,18000.00,18000.00,''),(15,'AWLN-251203-0001',3,1,15000.00,15000.00,''),(16,'AWLN-251203-0002',1,1,15000.00,15000.00,'');
 /*!40000 ALTER TABLE `transaction_items` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -304,7 +304,7 @@ CREATE TABLE `transactions` (
   UNIQUE KEY `invoiceCode` (`invoiceCode`),
   KEY `userId` (`userId`),
   CONSTRAINT `transactions_ibfk_1` FOREIGN KEY (`userId`) REFERENCES `users` (`userId`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -313,7 +313,7 @@ CREATE TABLE `transactions` (
 
 LOCK TABLES `transactions` WRITE;
 /*!40000 ALTER TABLE `transactions` DISABLE KEYS */;
-INSERT INTO `transactions` VALUES (1,1,'AWLN-251202-0001','MANNN','dinein','qris','pending',48000.00,0.00,0.00,48000.00,'Test','2025-12-02 09:59:51','2025-12-02 13:24:36'),(2,1,'AWLN-251202-0002',NULL,NULL,'cash','pending',0.00,0.00,0.00,0.00,NULL,'2025-12-02 10:05:46','2025-12-02 10:05:46');
+INSERT INTO `transactions` VALUES (1,1,'AWLN-251202-0001','MANNN','dinein','qris','pending',48000.00,0.00,0.00,48000.00,'Test','2025-12-02 09:59:51','2025-12-02 13:24:36'),(2,1,'AWLN-251202-0002','Irman','takeaway','cash','pending',66000.00,0.00,0.00,66000.00,'','2025-12-02 10:05:46','2025-12-03 10:51:21'),(3,1,'AWLN-251203-0001','AZIZ','delivery','qris','pending',83000.00,0.00,0.00,83000.00,'Cikarang Barat','2025-12-03 11:05:54','2025-12-03 11:20:23'),(4,1,'AWLN-251203-0002','RAMBE','dinein','cash','pending',15000.00,0.00,0.00,15000.00,'','2025-12-03 11:20:55','2025-12-03 11:25:28'),(5,1,'AWLN-251203-0003',NULL,NULL,'cash','pending',0.00,0.00,0.00,0.00,NULL,'2025-12-03 11:30:32','2025-12-03 11:30:32');
 /*!40000 ALTER TABLE `transactions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -331,7 +331,7 @@ CREATE TABLE `trx_counter` (
   `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `trxDate` (`trxDate`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -340,7 +340,7 @@ CREATE TABLE `trx_counter` (
 
 LOCK TABLES `trx_counter` WRITE;
 /*!40000 ALTER TABLE `trx_counter` DISABLE KEYS */;
-INSERT INTO `trx_counter` VALUES (1,'2025-12-02',2,'2025-12-02 10:05:46');
+INSERT INTO `trx_counter` VALUES (1,'2025-12-02',2,'2025-12-02 10:05:46'),(2,'2025-12-03',3,'2025-12-03 11:30:32');
 /*!40000 ALTER TABLE `trx_counter` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -417,4 +417,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-12-02 15:48:05
+-- Dump completed on 2025-12-03 15:24:38

@@ -96,6 +96,34 @@ const saveTrx = async (req, res) => {
     return api.error(res, "Internal Server Error");
   }
 };
+
+/* ============================================================
+   ✅ CHECKOUT TRANSACTION
+============================================================ */
+const checkOutTrx = async (req, res) => {
+  let { transactionId } = req.params;
+  let data = req.body;
+  try {
+    // console.log(data);
+    const trx = await trxModel.getById(transactionId);
+    if (!trx) {
+      return api.error(res, `Transaction Not Found!`, 500);
+    }
+
+    const result = await trxModel.saveTrx(
+      trx.invoiceCode,
+      data.formData,
+      data.cart
+    );
+
+    emit("transaction:saved", result);
+
+    return api.success(res, "result");
+  } catch (error) {
+    console.log("❌ createTrx error:", error);
+    return api.error(res, "Internal Server Error");
+  }
+};
 /* ============================================================
    ✅ UPDATE TRANSACTION
 ============================================================ */
@@ -246,6 +274,6 @@ module.exports = {
   addItem,
   updateItem,
   deleteItem,
-
+  checkOutTrx,
   getTrxByDate,
 };

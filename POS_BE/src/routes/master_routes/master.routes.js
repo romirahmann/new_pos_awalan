@@ -11,7 +11,7 @@ const CashbookController = require("../../controllers/master_controller/Cashbook
 const CategoryController = require("../../controllers/master_controller/CategoriesController");
 
 /* ================================================
-   👤 USER ROUTES
+   USER
 =================================================== */
 router.get("/users", UserController.getAllUser);
 router.post("/user", UserController.register);
@@ -19,7 +19,7 @@ router.put("/users/:id", UserController.updateUser);
 router.delete("/users/:id", UserController.deletedUser);
 
 /* ================================================
-   📦 PRODUCT ROUTES (Tanpa Upload IMG)
+   PRODUCTS
 =================================================== */
 router.get("/products", ProductController.getAllProducts);
 router.get("/products/:id", ProductController.getProductById);
@@ -32,7 +32,7 @@ router.put("/products/:id", ProductController.updateProduct);
 router.delete("/products/:id", ProductController.deleteProduct);
 
 /* ================================================
-   🎯 PRODUCT VARIANTS ROUTES
+   PRODUCT VARIANTS
 =================================================== */
 router.get(
   "/products/:productId/variants",
@@ -43,15 +43,16 @@ router.put("/variants/:variantId", VariantController.updateVariant);
 router.delete("/variants/:variantId", VariantController.deleteVariant);
 
 /* ================================================
-   🍟 PRODUCT ADDONS ROUTES
+   PRODUCT ADDONS
 =================================================== */
 router.get("/products/:productId/addons", AddonController.getAddonsByProduct);
 router.post("/products/:productId/addons", AddonController.createAddon);
 router.put("/addons/:addonId", AddonController.updateAddon);
 router.delete("/addons/:addonId", AddonController.deleteAddon);
-/* ============================================================
-   🧾 TRANSACTION HEADER (MAIN)
-============================================================ */
+
+/* ================================================
+   TRANSACTIONS (HEADER)
+=================================================== */
 router.get("/transactions", TransactionController.getAllTrx);
 router.get("/transactions/:transactionId", TransactionController.getTrxById);
 router.get(
@@ -62,32 +63,26 @@ router.post("/transaction", TransactionController.createTrx);
 router.put("/transactions/:transactionId", TransactionController.updateTrx);
 router.delete("/transactions/:transactionId", TransactionController.deleteTrx);
 
-/* ============================================================
-   🧺 TRANSACTION ITEMS (POS CART SYSTEM)
-============================================================ */
+/* ================================================
+   TRANSACTION ITEMS (CART)
+=================================================== */
 router.get("/transactions/:invoiceCode/items", TransactionController.getItems);
 router.post("/transactions/:invoiceCode/items", TransactionController.addItem);
-
-// ✔ ini sudah benar, jangan diubah formatnya
 router.put("/save-transaction/:transactionId", TransactionController.saveTrx);
+router.put(
+  "/checkout-transaction/:transactionId",
+  TransactionController.checkOutTrx
+);
 router.put("/transaction-items/:id", TransactionController.updateItem);
 router.delete("/transaction-items/:id", TransactionController.deleteItem);
 
-/* ============================================================
-   💳 CHECKOUT / PAYMENT
-============================================================ */
-// router.post(
-//   "/transactions/:transactionId/checkout",
-//   TransactionController.checkoutTrx
-// );
-
-/* ============================================================
-   📆 FILTER BY DATE (Sales Report)
-============================================================ */
+/* ================================================
+   TRANSACTION FILTERS
+=================================================== */
 router.get("/transactions/date/:date", TransactionController.getTrxByDate);
 
 /* ================================================
-   📘 CASHBOOK ROUTES
+   CASHBOOK
 =================================================== */
 router.get("/cashbook", CashbookController.getAllCashbook);
 router.get("/cashbook/:id", CashbookController.getCashbookById);
@@ -96,7 +91,7 @@ router.put("/cashbook/:id", CashbookController.updateCashbook);
 router.delete("/cashbook/:id", CashbookController.deleteCashbook);
 
 /* ================================================
-   🏷 CATEGORY ROUTES
+   CATEGORIES
 =================================================== */
 router.get("/categories", CategoryController.getAllCategories);
 router.get("/categories/:id", CategoryController.getCategoryById);

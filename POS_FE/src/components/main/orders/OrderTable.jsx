@@ -61,7 +61,9 @@ export function OrderTable({ data = [] }) {
   const handleView = async (row) => {
     try {
       let res = await api.get(`/master/transactions/${row.invoiceCode}/items`);
-      if (!res) {
+      let data = res.data.data;
+
+      if (data.items && data.items.length === 0) {
         router.navigate({
           to: "$transactionId/order-item",
           params: { transactionId: row.transactionId },

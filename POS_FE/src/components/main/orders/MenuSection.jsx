@@ -171,7 +171,7 @@ export function MenuSection({ cart, setCart }) {
       </div>
 
       {/* Menu Items */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 px-3  overflow-y-auto overflow-x-hidden">
         {filteredMenu.map((item) => (
           <motion.button
             key={item.productId}

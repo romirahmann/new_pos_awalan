@@ -16,43 +16,53 @@ import { ProductPage } from "../pages/main/ProductsPage";
 import { MainOrder } from "../components/main/orders/MainOrder";
 import { OrderItemPage } from "../components/main/orders/OrderItemPage";
 import { OrderDetail } from "../components/main/orders/OrderDetail";
+import { DashboardPage } from "../pages/main/DashboardPage";
 
+// ROOT ROUTE
 const rootRoute = createRootRoute({
   notFoundComponent: NotFoundPage,
 });
 
+// PUBLIC - LOGIN
+const loginPage = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "auth/login", // FIX: tidak boleh pakai "/"
+  component: LoginPage,
+});
+
+// PROTECTED LAYOUT (ADMIN)
 const adminLayout = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/",
+  id: "admin",
   component: AdminLayout,
   beforeLoad: ({ context }) => {
     const { store } = context;
     const state = store.getState();
-
     if (!state.auth.isAuthenticated) {
-      console.warn("UNAUTHORIZED! Redirecting to login...");
-      throw redirect({
-        to: "/auth/login",
-      });
+      throw redirect({ to: "/auth/login" });
     }
   },
 });
 
-const loginPage = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/auth/login",
-  component: LoginPage,
+// DASHBOARD (INDEX)
+const dashboard = createRoute({
+  getParentRoute: () => adminLayout,
+  path: "/",
+  component: DashboardPage,
 });
 
-const orderPage = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/orders",
-  component: OrdersPage,
-});
+// PRODUCTS
 const productPage = createRoute({
   getParentRoute: () => adminLayout,
-  path: "/products",
+  path: "products",
   component: ProductPage,
+});
+
+// ORDERS
+const orderPage = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "orders",
+  component: OrdersPage,
 });
 
 const mainOrder = createRoute({
@@ -73,11 +83,10 @@ const orderDetail = createRoute({
   component: OrderDetail,
 });
 
+// ROUTE TREE
 const routeTree = rootRoute.addChildren([
-  adminLayout.addChildren([
-    productPage,
-    orderPage.addChildren([mainOrder, orderItem, orderDetail]),
-  ]),
+  adminLayout.addChildren([dashboard, productPage]),
+  orderPage.addChildren([mainOrder, orderItem, orderDetail]),
   loginPage,
 ]);
 

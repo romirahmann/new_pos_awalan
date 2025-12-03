@@ -4,7 +4,7 @@ import { MenuSection } from "./MenuSection";
 import { InvoiceSection } from "./InvoiceSection";
 import RightSidebar from "../../../shared/RIghtBar";
 import api from "../../../services/axios.service";
-import { useParams } from "@tanstack/react-router";
+import { useParams, useRouter } from "@tanstack/react-router";
 import { useAlert } from "../../../store/AlertContext";
 import { useSelector } from "react-redux";
 
@@ -20,7 +20,7 @@ export function OrderItemPage() {
   });
   const { userId } = useSelector((state) => state.auth.user);
   const { showAlert } = useAlert();
-
+  const route = useRouter();
   const { transactionId } = useParams([]);
   useEffect(() => {}, []);
 
@@ -48,7 +48,9 @@ export function OrderItemPage() {
         formData,
       });
       showAlert("success", "Save Order Successfully!");
+
       setModal(false);
+      route.navigate({ to: "/orders/main-order" });
     } catch (error) {
       console.log(error);
     }

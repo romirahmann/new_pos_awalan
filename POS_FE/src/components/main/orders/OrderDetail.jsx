@@ -23,7 +23,6 @@ export function OrderDetail() {
     try {
       const res = await api.get(`/master/transactions/invoice/${invoiceCode}`);
       let data = res.data.data;
-      // console.log(data);
       setTransaction(data.trx);
       setItems(data.items);
     } catch (err) {
@@ -88,16 +87,22 @@ export function OrderDetail() {
 
   return (
     <div className="h-full bg-gray-900 text-gray-200 p-6">
-      <div className="title flex gap-3 items-center mb-3">
+      <div className="title md:flex gap-3 items-center mb-3">
         <h1 className="text-2xl font-bold ">Order Detail</h1>
         {/* STATUS */}
         <StatusBadge status={transaction.status} />
+        <div className="btn_addItem ms-auto">
+          <button
+            onClick={() => updateStatus("PAID")}
+            className="bg-green-600 hover:bg-green-700 px-6 py-2  rounded-lg text-white font-semibold"
+          >
+            ADD ITEM
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-90px)]">
-        {/* LEFT (ITEM LIST) */}
         <div className="col-span-2 overflow-y-auto pr-3 space-y-4 pb-24">
-          {/* ITEMS */}
           <section className="bg-gray-800/60 shadow rounded-xl border border-gray-700 p-5 mt-2">
             <h2 className="text-xl font-semibold mb-4">Order Items</h2>
 
@@ -136,7 +141,7 @@ export function OrderDetail() {
               <CardInfo
                 icon={<FaMoneyBillWave className="text-yellow-400" />}
                 title="Payment"
-                value={transaction.paymentType}
+                value={transaction?.paymentType?.toUpperCase()}
               />
             </div>
           </section>
