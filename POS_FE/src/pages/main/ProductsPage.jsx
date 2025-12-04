@@ -17,7 +17,7 @@ export function ProductPage() {
   const [filterStatus, setFilterStatus] = useState("All");
   const [sortBy, setSortBy] = useState("nameAsc");
   const [products, setProducts] = useState([]);
-
+  const [categories, setCategory] = useState();
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formMode, setFormMode] = useState("Add");
@@ -37,6 +37,19 @@ export function ProductPage() {
       console.log(error);
       setProducts([]);
     }
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      let res = await api.get(`/master/categories`);
+      setCategory(res.data.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
   }, []);
 
   useEffect(() => {
@@ -67,7 +80,7 @@ export function ProductPage() {
   // ⬇️ Eksekusi delete setelah konfirmasi
   const confirmDelete = async () => {
     try {
-      await api.delete(`/master/product/${deleteId}`);
+      await api.delete(`/master/products/${deleteId}`);
       showAlert("success", "Deleted Product Successfully!");
       setIsConfirmOpen(false);
     } catch (error) {
@@ -178,9 +191,12 @@ export function ProductPage() {
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value)}
         >
-          <option>All</option>
-          <option>Coffee</option>
-          <option>Tea</option>
+          <option value={"All"}>All</option>
+          {categories?.map((category) => (
+            <option key={category.categoryId} value={category.categoryName}>
+              {category.categoryName}
+            </option>
+          ))}
         </select>
 
         <select

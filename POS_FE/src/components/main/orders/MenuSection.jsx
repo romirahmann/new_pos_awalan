@@ -182,7 +182,7 @@ export function MenuSection({ cart, setCart }) {
             onClick={() => handleProductDetail(item)}
             className="p-4 bg-gray-700 hover:bg-gray-600 rounded-xl shadow text-left transition"
           >
-            <h3 className="font-semibold">{item.productName}</h3>
+            <h3 className="font-semibold uppercase">{item.productName}</h3>
             <p className="text-xs text-gray-400">{item.categoryName}</p>
             <p className="font-bold text-blue-400 mt-1">
               Rp {safeNumber(item.price).toLocaleString()}

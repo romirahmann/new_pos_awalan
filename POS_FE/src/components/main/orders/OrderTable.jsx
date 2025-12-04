@@ -28,10 +28,10 @@ export function OrderTable({ data = [] }) {
       header: "Status",
       render: (value) => (
         <span
-          className={`px-3 py-1 rounded-full text-xs ${
-            value === "PAID"
+          className={`px-3 py-1 uppercase rounded-full text-xs ${
+            value === "paid"
               ? "bg-green-500/20 text-green-400"
-              : value === "PENDING"
+              : value === "pending"
               ? "bg-yellow-500/20 text-yellow-400"
               : "bg-red-500/20 text-red-400"
           }`}
@@ -51,8 +51,9 @@ export function OrderTable({ data = [] }) {
 
   const handleDelete = async (transactionId) => {
     try {
-      await api.delete(`/master/transaction/${transactionId}`);
+      await api.delete(`/master/transactions/${transactionId}`);
       showAlert("success", "Deleted Successfully!");
+      setModal({ isOpen: false, type: "" });
     } catch (error) {
       console.log(error);
     }

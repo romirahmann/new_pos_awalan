@@ -101,6 +101,53 @@ const getAll = async () => {
     .orderBy("t.createdAt", "desc");
 };
 
+const checkOut = async (invoiceCode, formData, cart) => {
+  const trx = await db.transaction();
+
+  try {
+    await trx("transactions").where({ invoiceCode }).update(formData);
+
+    for (const item of cart) {
+      const itemPayload = {
+        invoiceCode,
+        productId: item.productId,
+        quantity: item.qty,
+        basePrice: item.price,
+        subtotal: item.totalPrice,
+        note: item.note || "",
+      };
+
+      const [id] = await trx("transaction_items").insert(itemPayload);
+
+      if (item.variant) {
+        await trx("transaction_item_variants").insert({
+          variantName: item.variant,
+          transactionItemId: id,
+          variantPrice: item.variant.variantPrice || 0,
+        });
+      }
+
+      if (item.selectedAddons && item.selectedAddons.length > 0) {
+        for (const addon of item.selectedAddons) {
+          await trx("transaction_item_addons").insert({
+            transactionItemId: id,
+            addonName: addon.addonName,
+            addonPrice: addon.addonPrice || 0,
+            quantity: addon.quantity || 1,
+          });
+        }
+      }
+    }
+
+    await trx.commit();
+
+    return trx;
+  } catch (error) {
+    console.error(error);
+    await trx.rollback();
+  }
+};
+
 const getById = async (transactionId) => {
   const trx = await db("transactions as t")
     .leftJoin("users as u", "t.userId", "u.userId")
@@ -195,4 +242,5 @@ module.exports = {
   updateTransactionItem,
   deleteTransactionItem,
   saveTrx,
+  checkOut,
 };

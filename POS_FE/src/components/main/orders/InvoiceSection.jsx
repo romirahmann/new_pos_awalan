@@ -12,18 +12,15 @@ export function SummaryRow({ label, value = 0, bold = false }) {
 }
 
 export function InvoiceSection({ cart, setCart, handlePayment, saveOrder }) {
-  useEffect(() => {
-    console.log(cart);
-  }, [cart]);
+  // useEffect(() => {
+  //   console.log("cart invoice:", cart);
+  // }, [cart]);
 
   const safeNumber = (v) => {
     const n = Number(v);
     return Number.isNaN(n) ? 0 : n;
   };
 
-  // =============================
-  // UPDATE QTY + HITUNG DISKON
-  // =============================
   const updateQty = (cartItemId, delta) => {
     setCart((prev) =>
       prev.map((item) => {

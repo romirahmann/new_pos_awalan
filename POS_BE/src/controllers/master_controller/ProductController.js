@@ -7,14 +7,16 @@ const { emit } = require("../../services/socket.service");
 ============================================================ */
 const createProduct = async (req, res) => {
   try {
-    const data = req.body;
+    const { variants, addons, ...products } = req.body;
 
-    const result = await productModel.create(data);
+    console.log(variants, addons, products);
+
+    const result = await productModel.create(products, variants, addons);
     const createdId = result[0];
 
     emit("product:created", { id: createdId, ...data });
 
-    return api.success(res, { id: createdId, ...data });
+    return api.success(res, createdId);
   } catch (error) {
     console.error("❌ Error createProduct:", error);
     return api.error(res, "Internal Server Error");
@@ -55,17 +57,17 @@ const getProductById = async (req, res) => {
 ============================================================ */
 const updateProduct = async (req, res) => {
   const { id } = req.params;
-  const data = req.body;
+  const { variants, addons, ...products } = req.body;
 
   try {
     const existing = await productModel.getById(id);
     if (!existing) return api.error(res, "Product not found");
 
-    await productModel.update(id, data);
+    await productModel.update(id, products, variants, addons);
 
-    emit("product:updated", { id, ...data });
+    emit("product:updated", { id, ...req.body });
 
-    return api.success(res, { id, ...data });
+    return api.success(res, { id });
   } catch (error) {
     console.error("❌ Error updateProduct:", error);
     return api.error(res, "Internal Server Error");

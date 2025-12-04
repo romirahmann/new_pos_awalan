@@ -45,12 +45,25 @@ export function OrderItemPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({ cart, formData });
+    try {
+      await api.put(`/master/checkout-transaction/${transactionId}`, {
+        cart,
+        formData,
+      });
+
+      showAlert("success", "Payment Order Successfully!");
+      setModal(false);
+      route.navigate({ to: "/orders/main-order" });
+    } catch (error) {
+      showAlert("error", "Failed to payment!");
+      console.log(error);
+    }
   };
 
   const saveOrder = async (e) => {
     e.preventDefault();
     try {
+      // console.log(formData);
       await api.put(`/master/save-transaction/${transactionId}`, {
         cart,
         formData,
@@ -60,6 +73,7 @@ export function OrderItemPage() {
       setModal(false);
       route.navigate({ to: "/orders/main-order" });
     } catch (error) {
+      showAlert("error", "Failed to save!");
       console.log(error);
     }
   };

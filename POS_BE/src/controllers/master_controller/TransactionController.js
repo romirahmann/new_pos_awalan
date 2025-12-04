@@ -76,17 +76,18 @@ const saveTrx = async (req, res) => {
   let { transactionId } = req.params;
   let data = req.body;
   try {
-    // console.log(data);
+    let formData = data.formData;
+    let cart = data.cart;
+
     const trx = await trxModel.getById(transactionId);
     if (!trx) {
       return api.error(res, `Transaction Not Found!`, 500);
     }
 
-    const result = await trxModel.saveTrx(
-      trx.invoiceCode,
-      data.formData,
-      data.cart
-    );
+    let totalDiscount = formData.totalAmount * (formData.discount / 100);
+    formData.totalAmount = formData.totalAmount - totalDiscount;
+
+    const result = await trxModel.saveTrx(trx.invoiceCode, formData, cart);
 
     emit("transaction:saved", result);
 
@@ -104,16 +105,21 @@ const checkOutTrx = async (req, res) => {
   let { transactionId } = req.params;
   let data = req.body;
   try {
+    let formData = data.formData;
+    let cart = data.cart;
+
     const trx = await trxModel.getById(transactionId);
+
     if (!trx) {
       return api.error(res, `Transaction Not Found!`, 500);
     }
 
-    const result = await trxModel.saveTrx(
-      trx.invoiceCode,
-      data.formData,
-      data.cart
-    );
+    let totalDiscount = formData.totalAmount * (formData.discount / 100);
+    formData.totalAmount = formData.totalAmount - totalDiscount;
+
+    formData.status = "paid";
+
+    const result = await trxModel.checkOut(trx.invoiceCode, formData, cart);
 
     emit("transaction:saved", result);
 
@@ -130,17 +136,10 @@ const updateTrx = async (req, res) => {
   const { transactionId } = req.params;
   const data = req.body;
   try {
-    const existing = await trxModel.getById(transactionId);
-    if (!existing) return api.error(res, "Transaction not found", 404);
-
     await trxModel.updateTransaction(transactionId, data);
     emit("transaction:updated", { id: transactionId, ...data });
 
-    return api.success(
-      res,
-      { id: transactionId, ...data },
-      "Transaction updated"
-    );
+    return api.success(res, "Transaction updated");
   } catch (error) {
     console.log("❌ updateTrx error:", error);
     return api.error(res, "Internal Server Error");

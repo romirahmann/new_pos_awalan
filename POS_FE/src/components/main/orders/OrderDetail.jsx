@@ -1,25 +1,33 @@
 /* eslint-disable no-unused-vars */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   FaMoneyBillWave,
   FaUser,
   FaList,
   FaEdit,
   FaTrash,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import dayjs from "dayjs";
 import { useParams, useRouter } from "@tanstack/react-router";
 import api from "../../../services/axios.service";
+import Modal from "../../../shared/Modal";
+import { useAlert } from "../../../store/AlertContext";
+import { listenToUpdate } from "../../../services/socket.service";
 
 export function OrderDetail() {
   const { invoiceCode } = useParams([]);
   const router = useRouter();
-
+  const [modal, setModal] = useState({
+    isOpen: false,
+    type: "",
+  });
   const [transaction, setTransaction] = useState(null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { showAlert } = useAlert();
 
-  const fetchDetail = async () => {
+  const fetchDetail = useCallback(async () => {
     try {
       const res = await api.get(`/master/transactions/invoice/${invoiceCode}`);
       let data = res.data.data;
@@ -30,20 +38,41 @@ export function OrderDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  });
 
-  const updateStatus = async (newStatus) => {
-    if (!confirm(`Ubah status menjadi ${newStatus}?`)) return;
+  useEffect(() => {
+    ["transaction:created", "transaction:updated", "transaction:deleted"].map(
+      (val) => listenToUpdate(val, fetchDetail)
+    );
+  }, [fetchDetail]);
 
-    try {
-      await api.put(`/master/transactions/status/${invoiceCode}`, {
-        status: newStatus,
-      });
-      fetchDetail();
-    } catch (err) {
-      console.error(err);
-      alert("Gagal mengubah status");
+  const updateStatus = async (type) => {
+    console.log(type, transaction);
+
+    if (type === "PAID") {
+      try {
+        console.log("TRANSACTION PAID");
+        await api.put(`/master/transactions/${transaction.transactionId}`, {
+          status: "paid",
+        });
+        showAlert("success", "Transaction Paid Successfully!");
+      } catch (error) {
+        showAlert("error", "Failed to Paid Transaction");
+        console.log(error);
+      }
+    } else {
+      try {
+        await api.put(`/master/transactions/${transaction.transactionId}`, {
+          status: "canceled",
+        });
+        showAlert("success", "Transaction Canceled Successfully!");
+      } catch (error) {
+        showAlert("error", "Failed to Canceled Transaction");
+        console.log(error);
+      }
     }
+
+    setModal({ isOpen: false, type: "" });
   };
 
   const handleEditItem = (item) => {
@@ -86,110 +115,147 @@ export function OrderDetail() {
   }
 
   return (
-    <div className="h-full bg-gray-900 text-gray-200 p-6">
-      <div className="title md:flex gap-3 items-center mb-3">
-        <h1 className="text-2xl font-bold ">Order Detail</h1>
-        {/* STATUS */}
-        <StatusBadge status={transaction.status} />
-        <div className="btn_addItem ms-auto">
-          <button
-            onClick={() => updateStatus("PAID")}
-            className="bg-green-600 hover:bg-green-700 px-6 py-2  rounded-lg text-white font-semibold"
-          >
-            ADD ITEM
-          </button>
+    <>
+      {" "}
+      <div className="h-full bg-gray-900 text-gray-200 p-6">
+        <div className="title md:flex gap-3 items-center mb-3">
+          <h1 className="text-2xl font-bold ">Order Detail</h1>
+          {/* STATUS */}
+          <StatusBadge status={transaction.status} />
+          <div className="btn_addItem ms-auto">
+            {transaction.status === "pending" && (
+              <button
+                onClick={() => setModal({ isOpen: true, type: "ADD" })}
+                className="bg-green-600 hover:bg-green-700 px-6 py-2  rounded-lg text-white font-semibold"
+              >
+                ADD ITEM
+              </button>
+            )}
+          </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-90px)]">
-        <div className="col-span-2 overflow-y-auto pr-3 space-y-4 pb-24">
-          <section className="bg-gray-800/60 shadow rounded-xl border border-gray-700 p-5 mt-2">
-            <h2 className="text-xl font-semibold mb-4">Order Items</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-90px)]">
+          <div className="col-span-2 overflow-y-auto pr-3 space-y-4 pb-24">
+            <section className="bg-gray-800/60 shadow rounded-xl border border-gray-700 p-5 mt-2">
+              <h2 className="text-xl font-semibold mb-4">Order Items</h2>
 
-            <div className="space-y-4">
-              {items.map((item) => (
-                <ItemCard
-                  key={item.id}
-                  item={item}
-                  onEdit={handleEditItem}
-                  onDelete={handleDeleteItem}
+              <div className="space-y-4">
+                {items.map((item) => (
+                  <ItemCard
+                    key={item.id}
+                    item={item}
+                    onEdit={handleEditItem}
+                    onDelete={handleDeleteItem}
+                  />
+                ))}
+              </div>
+            </section>
+          </div>
+
+          {/* RIGHT (INFO + SUMMARY PANEL) */}
+          <div className="col-span-1 sticky top-20 self-start space-y-4">
+            {/* TRANSACTION BASIC INFO */}
+            <section className="bg-gray-800/60 shadow rounded-xl border border-gray-700 p-5">
+              <h2 className="text-xl font-semibold mb-3">Transaction Info</h2>
+
+              <div className="grid grid-cols-1 gap-4">
+                <CardInfo
+                  icon={<FaList className="text-blue-400" />}
+                  title="Invoice"
+                  value={transaction.invoiceCode}
                 />
-              ))}
-            </div>
-          </section>
+
+                <CardInfo
+                  icon={<FaUser className="text-green-400" />}
+                  title="Customer"
+                  value={transaction.customerName || "-"}
+                />
+
+                <CardInfo
+                  icon={<FaMoneyBillWave className="text-yellow-400" />}
+                  title="Payment"
+                  value={transaction?.paymentType?.toUpperCase()}
+                />
+              </div>
+            </section>
+
+            {/* SUMMARY */}
+            <section className="bg-gray-800/60 shadow rounded-xl border border-gray-700 p-5">
+              <h2 className="text-xl font-semibold mb-3">Summary</h2>
+
+              <SummaryRow label="Subtotal" value={transaction.subTotal} />
+              <SummaryRow
+                label="Discount"
+                value={transaction.totalAmount * (transaction.discount / 100)}
+              />
+              {/* <SummaryRow label="Tax" value={transaction.tax} /> */}
+
+              <hr className="my-3 border-gray-700" />
+
+              <div className="flex justify-between text-lg font-bold">
+                <span>Total</span>
+                <span className="text-green-400">
+                  Rp {Number(transaction.totalAmount).toLocaleString()}
+                </span>
+              </div>
+
+              <p className="text-xs text-gray-500 text-center mt-4">
+                Created at:{" "}
+                {dayjs(transaction.createdAt).format("DD MMM YYYY HH:mm")}
+              </p>
+            </section>
+          </div>
         </div>
 
-        {/* RIGHT (INFO + SUMMARY PANEL) */}
-        <div className="col-span-1 sticky top-20 self-start space-y-4">
-          {/* TRANSACTION BASIC INFO */}
-          <section className="bg-gray-800/60 shadow rounded-xl border border-gray-700 p-5">
-            <h2 className="text-xl font-semibold mb-3">Transaction Info</h2>
+        {/* ACTION BUTTONS */}
+        {transaction.status === "pending" && (
+          <div className="fixed bottom-0 left-0 w-full bg-gray-800 border-t border-gray-700 p-4 flex justify-between items-center z-50">
+            <button
+              onClick={() => setModal({ isOpen: true, type: "CANCELED" })}
+              className="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg text-white font-semibold"
+            >
+              Cancel Order
+            </button>
 
-            <div className="grid grid-cols-1 gap-4">
-              <CardInfo
-                icon={<FaList className="text-blue-400" />}
-                title="Invoice"
-                value={transaction.invoiceCode}
-              />
-
-              <CardInfo
-                icon={<FaUser className="text-green-400" />}
-                title="Customer"
-                value={transaction.customerName || "-"}
-              />
-
-              <CardInfo
-                icon={<FaMoneyBillWave className="text-yellow-400" />}
-                title="Payment"
-                value={transaction?.paymentType?.toUpperCase()}
-              />
-            </div>
-          </section>
-
-          {/* SUMMARY */}
-          <section className="bg-gray-800/60 shadow rounded-xl border border-gray-700 p-5">
-            <h2 className="text-xl font-semibold mb-3">Summary</h2>
-
-            <SummaryRow label="Subtotal" value={transaction.subTotal} />
-            <SummaryRow label="Discount" value={-transaction.discount} />
-            <SummaryRow label="Tax" value={transaction.tax} />
-
-            <hr className="my-3 border-gray-700" />
-
-            <div className="flex justify-between text-lg font-bold">
-              <span>Total</span>
-              <span className="text-green-400">
-                Rp {Number(transaction.totalAmount).toLocaleString()}
-              </span>
-            </div>
-
-            <p className="text-xs text-gray-500 text-center mt-4">
-              Created at:{" "}
-              {dayjs(transaction.createdAt).format("DD MMM YYYY HH:mm")}
-            </p>
-          </section>
-        </div>
+            <button
+              onClick={() => setModal({ isOpen: true, type: "PAID" })}
+              className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg text-white font-semibold"
+            >
+              Mark as PAID
+            </button>
+          </div>
+        )}
       </div>
+      {/* MODAL CONFIRM */}
+      <Modal isOpen={modal.isOpen} title={`${modal.type} TRANSACTION`}>
+        <p className="text-sm mb-6">{`Are you sure for ${modal.type} ?`}</p>
 
-      {/* ACTION BUTTONS */}
-      {transaction.status === "pending" && (
-        <div className="fixed bottom-0 left-0 w-full bg-gray-800 border-t border-gray-700 p-4 flex justify-between items-center z-50">
+        <div className="flex justify-end gap-3">
           <button
-            onClick={() => updateStatus("CANCELED")}
-            className="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg text-white font-semibold"
+            onClick={() => setModal({ isOpen: false, type: "" })}
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded transition"
           >
-            Cancel Order
+            Batal
           </button>
-
-          <button
-            onClick={() => updateStatus("PAID")}
-            className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg text-white font-semibold"
-          >
-            Mark as PAID
-          </button>
+          {modal.type === "PAID" && (
+            <button
+              onClick={() => updateStatus(modal.type)}
+              className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded transition"
+            >
+              Paid
+            </button>
+          )}
+          {modal.type === "CANCELED" && (
+            <button
+              onClick={() => updateStatus(modal.type)}
+              className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded transition"
+            >
+              Canceled
+            </button>
+          )}
         </div>
-      )}
-    </div>
+      </Modal>
+    </>
   );
 }
 

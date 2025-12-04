@@ -110,13 +110,79 @@ const getProductAddons = async (productId) =>
 /* ============================================================
    ➕ CREATE PRODUCT
 ============================================================ */
-const create = async (data) => await db("products").insert(data);
+const create = async (products, variants = [], addons = []) => {
+  return await db.transaction(async (trx) => {
+    // 1️⃣ Insert product utama
+    const [productId] = await trx("products").insert(products);
+
+    // 2️⃣ Insert variants (jika ada)
+    if (variants.length > 0) {
+      const variantData = variants.map((v) => ({
+        productId,
+        variantValue: v.variantValue,
+        extraPrice: v.extraPrice || 0,
+      }));
+
+      await trx("product_variants").insert(variantData);
+    }
+
+    // 3️⃣ Insert addons (jika ada)
+    if (addons.length > 0) {
+      const addonData = addons.map((a) => ({
+        productId,
+        addonName: a.addonName,
+        price: a.price || 0,
+      }));
+
+      await trx("product_addons").insert(addonData);
+    }
+
+    return productId;
+  });
+};
 
 /* ============================================================
    ✏ UPDATE PRODUCT
 ============================================================ */
-const update = async (productId, data) =>
-  await db("products").where({ productId }).update(data);
+const update = async (productId, data, variants = [], addons = []) => {
+  return await db.transaction(async (trx) => {
+    const { variants: _, addons: __, ...productOnly } = data;
+
+    // 1️⃣ Update table products
+    await trx("products").where({ productId }).update(productOnly);
+
+    // 2️⃣ Hapus semua variants lama
+    await trx("product_variants").where({ productId }).delete();
+
+    // Insert variants baru
+    if (variants.length > 0) {
+      const variantData = variants.map((v) => ({
+        productId,
+        variantValue: v.variantValue,
+        variantGroup: v.variantGroup || null,
+        extraPrice: v.extraPrice || 0,
+      }));
+
+      await trx("product_variants").insert(variantData);
+    }
+
+    // 3️⃣ Hapus semua addons lama
+    await trx("product_addons").where({ productId }).delete();
+
+    // Insert addons baru
+    if (addons.length > 0) {
+      const addonData = addons.map((a) => ({
+        productId,
+        addonName: a.addonName,
+        price: a.price || 0,
+      }));
+
+      await trx("product_addons").insert(addonData);
+    }
+
+    return true;
+  });
+};
 
 /* ============================================================
    ❌ DELETE PRODUCT
