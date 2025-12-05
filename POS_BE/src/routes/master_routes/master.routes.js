@@ -9,6 +9,7 @@ const AddonController = require("../../controllers/master_controller/AddsonContr
 const TransactionController = require("../../controllers/master_controller/TransactionController");
 const CashbookController = require("../../controllers/master_controller/CashbookController");
 const CategoryController = require("../../controllers/master_controller/CategoriesController");
+const DashboardController = require("../../controllers/master_controller/DashboardController");
 
 /* ================================================
    USER
@@ -98,5 +99,12 @@ router.get("/categories/:id", CategoryController.getCategoryById);
 router.post("/categories", CategoryController.createCategory);
 router.put("/categories/:id", CategoryController.updateCategory);
 router.delete("/categories/:id", CategoryController.deleteCategory);
+
+// DashboardController
+
+router.get("/summary", DashboardController.getDashboardSummary);
+router.get("/sales-trend", DashboardController.getSalesTrend);
+router.get("/top-products", DashboardController.getTopSellingProducts);
+router.get("/payment", DashboardController.getPaymentBreakdown);
 
 module.exports = router;

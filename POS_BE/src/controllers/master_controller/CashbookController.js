@@ -88,6 +88,7 @@ const updateCashbook = async (req, res) => {
 const deleteCashbook = async (req, res) => {
   const { id } = req.params;
   try {
+    console.log(id);
     const existing = await cashbookModel.getCashbookById(id);
     if (!existing) return api.error(res, "Cashbook record not found", 404);
 

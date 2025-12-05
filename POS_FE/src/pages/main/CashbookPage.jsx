@@ -1,13 +1,15 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useCallback, useEffect, useState } from "react";
-import { FaPlus, FaSearch } from "react-icons/fa";
+import { FaEye, FaPlus, FaSearch, FaTrash } from "react-icons/fa";
 import dayjs from "dayjs";
 import Modal from "../../shared/Modal";
 import { Table } from "../../shared/Table";
 import api from "../../services/axios.service";
 import { listenToUpdate } from "../../services/socket.service";
 import { FormCashbook } from "../../components/main/cashbook/formCashbook";
+import ConfirmDelete from "../../shared/ConfirmDeleted";
+import { useAlert } from "../../store/AlertContext";
 
 // ==========================
 // FORMATTER RUPIAH INDONESIA
@@ -26,14 +28,14 @@ export function CashbookPage() {
     isOpen: false,
     type: "Add",
   });
-
+  const { showAlert } = useAlert();
   const [cashbookData, setCashBook] = useState([]);
-  const [selectedItem, setSelected] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const fetchCashbook = useCallback(async () => {
     try {
       let res = await api.get("/master/cashbooks");
-      //   console.log(res.data.data);
+
       setCashBook(res.data.data);
     } catch (error) {
       console.log(error);
@@ -88,6 +90,31 @@ export function CashbookPage() {
     { key: "notes", header: "Notes" },
     { key: "createdByName", header: "Created By" },
   ];
+
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/master/cashbook/${selectedItem}`);
+      showAlert("success", "Delete Successfully!");
+      setIsModalOpen({ isOpen: false, type: "" });
+    } catch (error) {
+      showAlert("error", "Delete Failed!");
+      console.log(error);
+    }
+  };
+
+  const actionRenderer = (row) => (
+    <div className="flex gap-2 justify-center">
+      <button
+        onClick={() => {
+          setSelectedItem(row.id);
+          setIsModalOpen({ isOpen: true, type: "Delete" });
+        }}
+        className="p-2 rounded-lg bg-red-600/20 border border-red-600/40 text-blue-300 hover:bg-blue-600/40 transition"
+      >
+        <FaTrash />
+      </button>
+    </div>
+  );
 
   return (
     <div className="p-6 bg-gray-900 rounded-4xl min-h-screen text-white">
@@ -156,13 +183,20 @@ export function CashbookPage() {
             No records found.
           </div>
         ) : (
-          <Table columns={columns} data={filtered} />
+          <Table
+            columns={columns}
+            data={filtered}
+            actionRenderer={actionRenderer}
+          />
         )}
       </div>
 
       {/* ADD DAILY RECORD MODAL */}
       <Modal
-        isOpen={isModalOpen.isOpen}
+        isOpen={
+          (isModalOpen.isOpen && isModalOpen.type === "Add") ||
+          isModalOpen.type === "Edit"
+        }
         title={`${isModalOpen.type} Cashbook Daily Record`}
         onClose={() => setIsModalOpen({ isOpen: false, type: "" })}
       >
@@ -172,6 +206,11 @@ export function CashbookPage() {
           onClose={() => setIsModalOpen({ isOpen: false, type: "" })}
         />
       </Modal>
+      <ConfirmDelete
+        isOpen={isModalOpen.isOpen && isModalOpen.type === "Delete"}
+        onCancel={() => setIsModalOpen({ isOpen: false, type: "" })}
+        onConfirm={() => handleDelete()}
+      />
     </div>
   );
 }

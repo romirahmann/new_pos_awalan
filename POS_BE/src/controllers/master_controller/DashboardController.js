@@ -1,15 +1,18 @@
-const dashboardModel = require("../../models/Dashboard");
+const dashboardModel = require("../../models/dashboard.model");
 const api = require("../../utils/common");
 const { emit } = require("../../services/socket.service");
 
 /* ============================================================
-   📊 GET DASHBOARD SUMMARY (KPI, Cashflow, Produk, Grafik)
+   📊 GET DASHBOARD SUMMARY (day | month | year)
 ============================================================ */
 const getDashboardSummary = async (req, res) => {
   try {
-    const data = await dashboardModel.getDashboardData();
+    // Default = day
+    const type = req.query.type || "day";
 
-    // Emit event agar dashboard di client bisa auto refresh
+    const data = await dashboardModel.getDashboardData(type);
+
+    // Emit event untuk auto-update dashboard client
     emit("dashboard:refresh", data);
 
     return api.success(res, data);
@@ -20,11 +23,14 @@ const getDashboardSummary = async (req, res) => {
 };
 
 /* ============================================================
-   📈 GET SALES TREND 7 DAYS
+   📈 GET SALES TREND (day=7 hari, month=per hari dlm bulan ini, year=per bulan)
 ============================================================ */
 const getSalesTrend = async (req, res) => {
   try {
-    const trend = await dashboardModel.getLast7DaysRevenue();
+    const type = req.query.type || "day";
+
+    const trend = await dashboardModel.getSalesTrend(type);
+
     return api.success(res, trend);
   } catch (error) {
     console.error("❌ Error getSalesTrend:", error);
@@ -33,11 +39,14 @@ const getSalesTrend = async (req, res) => {
 };
 
 /* ============================================================
-   ⭐ TOP SELLING PRODUCTS
+   ⭐ TOP SELLING PRODUCTS (per type)
 ============================================================ */
 const getTopSellingProducts = async (req, res) => {
   try {
-    const products = await dashboardModel.getTopProducts();
+    const type = req.query.type || "day";
+
+    const products = await dashboardModel.getTopProducts(type);
+
     return api.success(res, products);
   } catch (error) {
     console.error("❌ Error getTopSellingProducts:", error);
@@ -46,27 +55,17 @@ const getTopSellingProducts = async (req, res) => {
 };
 
 /* ============================================================
-   💳 PAYMENT METHOD BREAKDOWN
+   💳 PAYMENT METHOD BREAKDOWN (cash, qris, card per type)
 ============================================================ */
 const getPaymentBreakdown = async (req, res) => {
   try {
-    const stats = await dashboardModel.getPaymentStats();
+    const type = req.query.type || "day";
+
+    const stats = await dashboardModel.getPaymentStats(type);
+
     return api.success(res, stats);
   } catch (error) {
     console.error("❌ Error getPaymentBreakdown:", error);
-    return api.error(res, "Internal Server Error");
-  }
-};
-
-/* ============================================================
-   🔥 LOW STOCK ALERT
-============================================================ */
-const getLowStockAlerts = async (req, res) => {
-  try {
-    const stock = await dashboardModel.getLowStock();
-    return api.success(res, stock);
-  } catch (error) {
-    console.error("❌ Error getLowStockAlerts:", error);
     return api.error(res, "Internal Server Error");
   }
 };
@@ -79,5 +78,4 @@ module.exports = {
   getSalesTrend,
   getTopSellingProducts,
   getPaymentBreakdown,
-  getLowStockAlerts,
 };
