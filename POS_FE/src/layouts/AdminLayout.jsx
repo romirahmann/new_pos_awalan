@@ -22,7 +22,7 @@ export function AdminLayout() {
       {/* Main content */}
       <div className="flex flex-col  flex-1 overflow-hidden">
         <Topbar openSidebar={() => setOpenSidebarMobile(true)} />
-        <div className="flex-1  overflow-auto p-6 bg-gray-400">
+        <div className="flex-1  overflow-auto p-3 bg-gray-400">
           <Outlet />
         </div>
       </div>

@@ -84,7 +84,7 @@ router.get("/transactions/date/:date", TransactionController.getTrxByDate);
 /* ================================================
    CASHBOOK
 =================================================== */
-router.get("/cashbook", CashbookController.getAllCashbook);
+router.get("/cashbooks", CashbookController.getAllCashbook);
 router.get("/cashbook/:id", CashbookController.getCashbookById);
 router.post("/cashbook", CashbookController.createCashbook);
 router.put("/cashbook/:id", CashbookController.updateCashbook);

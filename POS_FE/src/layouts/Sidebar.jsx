@@ -11,6 +11,7 @@ import {
   FaAngleDoubleRight,
   FaUserShield,
   FaCalculator,
+  FaBook,
 } from "react-icons/fa";
 import { PiUserGearFill } from "react-icons/pi";
 import { Link, useRouterState } from "@tanstack/react-router";
@@ -39,6 +40,13 @@ export const menuItems = [
     name: "Transactions",
     icon: <FaCalculator />,
     path: "/transactions",
+    allowedRoles: ["OWNER", "ADMIN"],
+    allowedPositions: ["MANAGER"],
+  },
+  {
+    name: "Cashbook",
+    icon: <FaBook />,
+    path: "/Cashbook",
     allowedRoles: ["OWNER", "ADMIN"],
     allowedPositions: ["MANAGER"],
   },

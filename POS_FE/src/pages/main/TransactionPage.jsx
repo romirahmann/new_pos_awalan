@@ -9,13 +9,15 @@ import dayjs from "dayjs";
 import Modal from "../../shared/Modal";
 import { useAlert } from "../../store/AlertContext";
 import api from "../../services/axios.service";
+import DetailPanel from "../../components/main/transaction/DetailPanel";
+import ConfirmDelete from "../../shared/ConfirmDeleted";
 
 export function TransactionPage() {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortBy, setSortBy] = useState("dateNewest");
-
+  const [modal, setModal] = useState({ isOpen: false, data: [] });
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
@@ -38,9 +40,29 @@ export function TransactionPage() {
     );
   }, [fetchOrders]);
 
+  const fetchDetail = async (invoiceCode) => {
+    try {
+      let res = await api.get(`/master/transactions/${invoiceCode}/items`);
+      console.log(res.data.data);
+      setSelectedOrder(res.data.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const openDetail = (order) => {
-    setSelectedOrder(order);
+    fetchDetail(order.invoiceCode);
     setIsDetailOpen(true);
+  };
+
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/master/transactions/${modal.data}`);
+      showAlert("success", "Deleted Successfully!");
+      setModal(false);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const filteredOrders = orders
@@ -101,15 +123,15 @@ export function TransactionPage() {
       >
         <FaEye />
       </button>
-      <button
+      {/* <button
         className="p-2 rounded-lg bg-green-600/20 border border-green-600/40 text-blue-300 hover:bg-blue-600/40 transition"
         onClick={() => openDetail(row)}
       >
         <FaEdit />
-      </button>
+      </button> */}
       <button
         className="p-2 rounded-lg bg-red-600/20 border border-red-600/40 text-blue-300 hover:bg-blue-600/40 transition"
-        onClick={() => openDetail(row)}
+        onClick={() => setModal({ isOpen: true, data: row.transactionId })}
       >
         <FaTrash />
       </button>
@@ -117,90 +139,79 @@ export function TransactionPage() {
   );
 
   return (
-    <div className="p-6 bg-gray-900 rounded-4xl text-gray-900">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-white">Order Management</h1>
-      </div>
-
-      {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-        <div className="flex items-center bg-[#161b22] border border-gray-700 px-3 py-2 rounded-lg">
-          <FaSearch className="mr-2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search invoice..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-transparent text-gray-200 outline-none"
-          />
-        </div>
-
-        <select
-          className="bg-[#161b22] border border-gray-700 text-gray-200 px-3 py-2 rounded-lg"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="All">All Status</option>
-          <option value="pending">Pending</option>
-          <option value="paid">Paid</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
-
-        <select
-          className="bg-[#161b22] border border-gray-700 text-gray-200 px-3 py-2 rounded-lg"
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-        >
-          <option value="dateNewest">Newest</option>
-          <option value="dateOldest">Oldest</option>
-          <option value="amountAsc">Total Low-High</option>
-          <option value="amountDesc">Total High-Low</option>
-        </select>
-      </div>
-
-      {/* Table */}
-      {filteredOrders.length === 0 ? (
-        <div className="text-center text-gray-400 py-10 italic">
-          No orders found.
-        </div>
+    <>
+      {isDetailOpen ? (
+        <DetailPanel
+          open={isDetailOpen}
+          order={selectedOrder?.trx}
+          items={selectedOrder?.items}
+          onClose={() => setIsDetailOpen(false)}
+        />
       ) : (
-        <div className=" border border-gray-700 rounded-xl p-4 shadow-xl">
-          <Table
-            columns={columns}
-            data={filteredOrders}
-            actionRenderer={actionRenderer}
-          />
+        <div className="p-6 bg-gray-900 rounded-4xl text-gray-900">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold text-white">Order Management</h1>
+          </div>
+
+          {/* Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+            <div className="flex items-center bg-[#161b22] border border-gray-700 px-3 py-2 rounded-lg">
+              <FaSearch className="mr-2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search invoice..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-transparent text-gray-200 outline-none"
+              />
+            </div>
+
+            <select
+              className="bg-[#161b22] border border-gray-700 text-gray-200 px-3 py-2 rounded-lg"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="All">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="paid">Paid</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+
+            <select
+              className="bg-[#161b22] border border-gray-700 text-gray-200 px-3 py-2 rounded-lg"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="dateNewest">Newest</option>
+              <option value="dateOldest">Oldest</option>
+              <option value="amountAsc">Total Low-High</option>
+              <option value="amountDesc">Total High-Low</option>
+            </select>
+          </div>
+
+          {/* Table */}
+          {filteredOrders.length === 0 ? (
+            <div className="text-center text-gray-400 py-10 italic">
+              No orders found.
+            </div>
+          ) : (
+            <div className=" border border-gray-700 rounded-xl p-4 shadow-xl">
+              <Table
+                columns={columns}
+                data={filteredOrders}
+                actionRenderer={actionRenderer}
+              />
+            </div>
+          )}
         </div>
       )}
 
-      {/* DETAIL MODAL */}
-      <Modal
-        isOpen={isDetailOpen}
-        title="Detail Order"
-        onClose={() => setIsDetailOpen(false)}
-      >
-        {selectedOrder ? (
-          <div className="space-y-3 text-gray-200 p-2">
-            <p>
-              <b>Invoice:</b> {selectedOrder.invoiceCode}
-            </p>
-            <p>
-              <b>Customer:</b> {selectedOrder.customerName}
-            </p>
-            <p>
-              <b>Total:</b> Rp{" "}
-              {Number(selectedOrder.totalAmount).toLocaleString()}
-            </p>
-            <p>
-              <b>Status:</b> {selectedOrder.status}
-            </p>
-            <p>
-              <b>Tanggal:</b>{" "}
-              {dayjs(selectedOrder.createdAt).format("DD MMM YYYY HH:mm")}
-            </p>
-          </div>
-        ) : null}
-      </Modal>
-    </div>
+      <ConfirmDelete
+        isOpen={modal.isOpen}
+        title={`Deleteed Transaction`}
+        onCancel={() => setModal(false)}
+        onConfirm={() => handleDelete()}
+      />
+    </>
   );
 }

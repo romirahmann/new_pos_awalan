@@ -36,14 +36,20 @@ const getCashbookById = async (req, res) => {
 ============================================================ */
 const createCashbook = async (req, res) => {
   try {
-    const payload = {
-      ...req.body,
-      createdAt: new Date(),
-      createdBy: req.user?.userId || req.body.createdBy || null,
-    };
+    let data = req.body;
 
-    const result = await cashbookModel.createCashbook(payload);
-    const newRecord = { id: result[0], ...payload };
+    // Auto generate net_balance
+    const totalIn = Number(data.total_in || 0);
+    const totalOut = Number(data.total_out || 0);
+
+    data.net_balance = totalIn - totalOut;
+
+    const result = await cashbookModel.createCashbook(data);
+
+    const newRecord = {
+      id: result[0],
+      ...data,
+    };
 
     emit("cashbook:created", newRecord);
 

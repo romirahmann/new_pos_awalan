@@ -18,6 +18,7 @@ import { OrderItemPage } from "../components/main/orders/OrderItemPage";
 import { OrderDetail } from "../components/main/orders/OrderDetail";
 import { DashboardPage } from "../pages/main/DashboardPage";
 import { TransactionPage } from "../pages/main/TransactionPage";
+import { CashbookPage } from "../pages/main/CashbookPage";
 
 // ROOT ROUTE
 const rootRoute = createRootRoute({
@@ -73,6 +74,13 @@ const transactionPage = createRoute({
   component: TransactionPage,
 });
 
+// CASHBOOK
+const cashbookPage = createRoute({
+  getParentRoute: () => adminLayout,
+  path: "cashbook",
+  component: CashbookPage,
+});
+
 const mainOrder = createRoute({
   getParentRoute: () => orderPage,
   path: "main-order",
@@ -93,7 +101,12 @@ const orderDetail = createRoute({
 
 // ROUTE TREE
 const routeTree = rootRoute.addChildren([
-  adminLayout.addChildren([dashboard, productPage, transactionPage]),
+  adminLayout.addChildren([
+    dashboard,
+    productPage,
+    transactionPage,
+    cashbookPage,
+  ]),
   orderPage.addChildren([mainOrder, orderItem, orderDetail]),
   loginPage,
 ]);
