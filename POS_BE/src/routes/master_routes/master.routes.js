@@ -105,6 +105,7 @@ router.delete("/categories/:id", CategoryController.deleteCategory);
 router.get("/summary", DashboardController.getDashboardSummary);
 router.get("/sales-trend", DashboardController.getSalesTrend);
 router.get("/top-products", DashboardController.getTopSellingProducts);
+router.get("/category-sales", DashboardController.getCategorySales); // ⭐ baru
 router.get("/payment", DashboardController.getPaymentBreakdown);
 
 module.exports = router;

@@ -55,7 +55,7 @@ const createTrx = async (req, res) => {
   let data = req.body;
   try {
     const invoiceCode = await counterModel.generateInvoiceCode();
-    data = { ...data, status: "pending", invoiceCode };
+    data = { ...data, invoiceCode };
 
     const result = await trxModel.createTransaction(data);
     const id = result[0];

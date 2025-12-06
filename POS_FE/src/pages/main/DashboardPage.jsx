@@ -1,35 +1,60 @@
+// DashboardPage diperbaiki sesuai struktur backend baru
+
+/* eslint-disable react-hooks/preserve-manual-memoization */
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable no-unused-vars */
 
-import { useEffect, useState } from "react";
-import { Line, Bar } from "react-chartjs-2";
+import { useCallback, useEffect, useState } from "react";
+import { Line } from "react-chartjs-2";
 import "../../utils/chartConfig";
+import { ChartBox } from "../../components/main/dashboard/ChartBox";
+import { Card } from "../../components/main/dashboard/Card";
+import api from "../../services/axios.service";
+import dayjs from "dayjs";
 
-// =============================
-// DASHBOARD PAGE
-// =============================
 export function DashboardPage() {
   const [filterType, setFilterType] = useState("day");
   const [data, setData] = useState(null);
 
-  useEffect(() => {
-    setData(generateDummyData(filterType));
+  const fetchSummaryData = useCallback(async () => {
+    try {
+      let res = await api.get(`/master/summary?type=${filterType}`);
+      const d = res.data.data;
+
+      console.log(res.data.data);
+
+      setData(d);
+    } catch (err) {
+      console.log(err);
+    }
   }, [filterType]);
+
+  useEffect(() => {
+    fetchSummaryData();
+  }, [filterType, fetchSummaryData]);
 
   if (!data) return <div className="text-white p-6">Loading...</div>;
 
   const {
-    sales,
-    categories,
-    omzet,
-    profit,
-    revenueTrend,
-    monthlySalesTrend,
-    yearlySalesTrend,
+    overview,
+    topProduct,
+    salesTrend,
+    categorySummary,
+    paymentStats,
+    topProfitProduct,
+    totalProfit,
+    profitTrend,
+    comparison,
+    cashbook,
   } = data;
 
+  const trendData = salesTrend.map((d) => ({
+    label: dayjs(d.label).format("DD MMM"),
+    value: d.total,
+  }));
+
   return (
-    <div className="p-6 text-white min-h-screen bg-gray-900">
+    <div className="p-6 text-white min-h-screen bg-gray-900 rounded-2xl">
       <div className="flex justify-between mb-6">
         <h1 className="text-3xl font-bold">Dashboard</h1>
 
@@ -44,174 +69,230 @@ export function DashboardPage() {
         </select>
       </div>
 
-      {/* KPI TOP */}
+      {/* KPI KOTAK ATAS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <Card
-          title={`Penjualan (${filterType})`}
-          value={`${sales.total_sales} transaksi`}
-          subtitle={`Item terjual: ${sales.total_items}`}
+          title="Total Transaksi"
+          value={`${overview.total_transactions} transaksi`}
+          subtitle={`Item terjual: ${overview.items_sold}`}
         />
 
         <Card
-          title="Minuman"
-          value={`${categories.drinks.total} item`}
-          subtitle={`Coffee: ${categories.drinks.coffee}, Matcha: ${categories.drinks.matcha}, Non Coffee: ${categories.drinks.noncoffee}`}
+          title="Kategori Minuman"
+          value={
+            categorySummary.coffee +
+            categorySummary.matcha +
+            categorySummary.nonCoffee +
+            " item"
+          }
+          subtitle={`Coffee: ${categorySummary.coffee}, Matcha: ${categorySummary.matcha}, Non Coffee: ${categorySummary.nonCoffee}`}
         />
 
         <Card
-          title="Makanan"
-          value={`${categories.food} item`}
-          subtitle={`Dessert: ${categories.dessert}`}
+          title="Food & Dessert"
+          value={`${categorySummary.food + categorySummary.dessert} item`}
+          subtitle={`Food:${categorySummary.food}, Dessert: ${categorySummary.dessert}`}
         />
 
         <Card
-          title={`Omzet (${filterType})`}
-          value={toRupiah(omzet.total)}
-          subtitle={`Harian: ${toRupiah(omzet.daily)}`}
+          title="Omzet"
+          value={toRupiah(overview.revenue)}
+          subtitle={`Cash: ${toRupiah(overview.cash_income)}, QRIS: ${toRupiah(
+            overview.qris_income
+          )}`}
         />
+
+        <Card
+          title={`Top Product`}
+          value={topProduct.productName}
+          subtitle={`Total Sold: ${topProduct.total_sold}`}
+        />
+        <Card
+          title="Top Profit Product"
+          value={toRupiah(topProfitProduct.total_profit)}
+          subtitle={`${topProfitProduct.productName}`}
+        />
+        <Card
+          title={`Top Profit`}
+          value={toRupiah(totalProfit)}
+          subtitle={`Test`}
+        />
+
+        {filterType === "day" && (
+          <Card
+            title="Hari Ini vs Kemarin"
+            value={`${comparison.pctDay}%`}
+            subtitle={`Selisih: ${toRupiah(
+              comparison.today - comparison.yesterday
+            )}`}
+          />
+        )}
+
+        {filterType === "month" && (
+          <Card
+            title="Bulan Ini vs Bulan Lalu"
+            value={`${comparison.pctMonth}%`}
+            subtitle={`Selisih: ${toRupiah(
+              comparison.thisMonth - comparison.lastMonth
+            )}`}
+          />
+        )}
+
+        {filterType === "year" && (
+          <Card
+            title="Tahun Ini vs Tahun Lalu"
+            value={`${comparison.pctYear}%`}
+            subtitle={`Selisih: ${toRupiah(
+              comparison.thisYear - comparison.lastYear
+            )}`}
+          />
+        )}
       </div>
 
-      {/* KPI PROFIT */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card title="Laba Harian" value={toRupiah(profit.daily)} />
-        <Card title="Laba Bulanan" value={toRupiah(profit.monthly)} />
-        <Card title="Laba Tahunan" value={toRupiah(profit.yearly)} />
-      </div>
-
-      {/* FULL SALES CHART - 1 ROW */}
-      <ChartBox title="Grafik Penjualan (Full Width)" full>
-        <Bar data={formatBar(monthlySalesTrend)} />
-      </ChartBox>
-
-      {/* REVENUE CHART */}
-      <div className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartBox title={`Grafik Revenue (${filterType})`}>
-          <Line data={formatLine(revenueTrend)} />
+      <div className="chart grid grid-cols-1 lg:grid-cols-2 gap-2">
+        {/* CHART */}
+        <ChartBox title="Grafik Penjualan">
+          <div className="w-full h-[350px]">
+            <Line
+              data={{
+                labels: trendData.map((d) => d.label),
+                datasets: [
+                  {
+                    label: "Penjualan",
+                    data: trendData.map((d) => d.value),
+                    borderColor: "#4F46E5",
+                    backgroundColor: (ctx) => {
+                      const gradient = ctx.chart.ctx.createLinearGradient(
+                        0,
+                        0,
+                        0,
+                        300
+                      );
+                      gradient.addColorStop(0, "rgba(79,70,229,0.2)");
+                      gradient.addColorStop(1, "rgba(79,70,229,0)");
+                      return gradient;
+                    },
+                    borderWidth: 2,
+                    tension: 0.3,
+                    pointRadius: 5,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: "#4F46E5",
+                    fill: true,
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: "index", intersect: false },
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    callbacks: {
+                      label: function (context) {
+                        return `Rp ${context.parsed.y.toLocaleString()}`;
+                      },
+                    },
+                  },
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    grid: { color: "#2d2f36" },
+                    ticks: {
+                      color: "#9CA3AF",
+                      callback: function (value) {
+                        return `Rp ${value.toLocaleString()}`;
+                      },
+                    },
+                  },
+                  x: {
+                    grid: { color: "#2d2f36" },
+                    ticks: { color: "#9CA3AF" },
+                  },
+                },
+              }}
+            />
+          </div>
         </ChartBox>
-
-        <ChartBox title="Grafik Penjualan Tahunan">
-          <Line data={formatLine(yearlySalesTrend)} />
+        <ChartBox title="Grafik Profit">
+          <div className="w-full h-[350px]">
+            <Line
+              data={{
+                labels: trendData.map((d) => d.label),
+                datasets: [
+                  {
+                    label: "Profit",
+                    data: profitTrend.map((d) => d.total),
+                    borderColor: "white",
+                    backgroundColor: (ctx) => {
+                      const gradient = ctx.chart.ctx.createLinearGradient(
+                        0,
+                        0,
+                        0,
+                        300
+                      );
+                      gradient.addColorStop(0, "rgba(79,70,229,0.2)");
+                      gradient.addColorStop(1, "rgba(79,70,229,0)");
+                      return gradient;
+                    },
+                    borderWidth: 2,
+                    tension: 0.3,
+                    pointRadius: 5,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: "white",
+                    fill: true,
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: "index", intersect: false },
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    callbacks: {
+                      label: function (context) {
+                        return `Rp ${context.parsed.y.toLocaleString()}`;
+                      },
+                    },
+                  },
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    grid: { color: "#2d2f36" },
+                    ticks: {
+                      color: "#9CA3AF",
+                      callback: function (value) {
+                        return `Rp ${value.toLocaleString()}`;
+                      },
+                    },
+                  },
+                  x: {
+                    grid: { color: "#2d2f36" },
+                    ticks: { color: "#9CA3AF" },
+                  },
+                },
+              }}
+            />
+          </div>
         </ChartBox>
       </div>
-    </div>
-  );
-}
 
-// =============================
-// COMPONENTS
-// =============================
-function Card({ title, value, subtitle }) {
-  return (
-    <div className="bg-[#161b22] p-4 border border-gray-700 rounded-xl">
-      <p className="text-gray-400 text-sm">{title}</p>
-      <h2 className="text-2xl font-bold mt-1">{value}</h2>
-      {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
-    </div>
-  );
-}
-
-function ChartBox({ title, children, full }) {
-  return (
-    <div
-      className={`bg-[#161b22] border border-gray-700 p-4 rounded-xl ${
-        full ? "h-[420px] w-full" : "h-72"
-      }`}
-    >
-      <p className="text-gray-400 mb-2">{title}</p>
-      {children}
+      <div className="cashbook  mt-8">
+        <div className="title">
+          <h1 className="ms-2 text-2xl my-3">Cashbook Dashboard</h1>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Card title={`Income`} value={toRupiah(cashbook.total_income)} />
+          <Card title={`Expense`} value={toRupiah(cashbook.total_expense)} />
+          <Card title={`Net Balance`} value={toRupiah(cashbook.net_balance)} />
+        </div>
+      </div>
     </div>
   );
 }
 
 const toRupiah = (v) => `Rp ${Number(v).toLocaleString()}`;
-
-// =============================
-// CHART FORMATTERS
-// =============================
-function formatLine(data) {
-  return {
-    labels: data.map((d) => d.label),
-    datasets: [
-      {
-        label: "Value",
-        data: data.map((d) => d.value),
-        borderColor: "#4ade80",
-        tension: 0.4,
-      },
-    ],
-  };
-}
-
-function formatBar(data) {
-  return {
-    labels: data.map((d) => d.label),
-    datasets: [
-      {
-        label: "Penjualan",
-        data: data.map((d) => d.value),
-        backgroundColor: "#60a5fa",
-      },
-    ],
-  };
-}
-
-// =============================
-// DUMMY GENERATOR
-// =============================
-function generateDummyData(type) {
-  const rand = (min, max) => Math.floor(Math.random() * (max - min)) + min;
-
-  const generateTrend = (count, labelPrefix) =>
-    [...Array(count)].map((_, i) => ({
-      label: `${labelPrefix}${i + 1}`,
-      value: rand(200_000, 1_000_000),
-    }));
-
-  return {
-    sales: {
-      total_sales: rand(20, 120),
-      total_items: rand(40, 200),
-    },
-
-    categories: {
-      drinks: {
-        coffee: rand(10, 40),
-        matcha: rand(5, 25),
-        noncoffee: rand(5, 30),
-        get total() {
-          return this.coffee + this.matcha + this.noncoffee;
-        },
-      },
-      food: rand(10, 40),
-      dessert: rand(5, 20),
-    },
-
-    omzet: {
-      daily: rand(1_000_000, 5_000_000),
-      monthly: rand(25_000_000, 100_000_000),
-      yearly: rand(300_000_000, 800_000_000),
-      get total() {
-        if (type === "day") return this.daily;
-        if (type === "month") return this.monthly;
-        return this.yearly;
-      },
-    },
-
-    profit: {
-      daily: rand(300_000, 1_500_000),
-      monthly: rand(8_000_000, 40_000_000),
-      yearly: rand(80_000_000, 250_000_000),
-    },
-
-    revenueTrend:
-      type === "day"
-        ? generateTrend(7, "D")
-        : type === "month"
-        ? generateTrend(30, "T")
-        : generateTrend(12, "B"),
-
-    monthlySalesTrend: generateTrend(30, "T"),
-
-    yearlySalesTrend: generateTrend(12, "B"),
-  };
-}

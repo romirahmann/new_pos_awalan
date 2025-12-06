@@ -38,12 +38,19 @@ const createCashbook = async (req, res) => {
   try {
     let data = req.body;
 
-    // Auto generate net_balance
+    // Hitung net transaksi
     const totalIn = Number(data.total_in || 0);
     const totalOut = Number(data.total_out || 0);
+    const net = totalIn - totalOut;
+    data.net_balance = net;
 
-    data.net_balance = totalIn - totalOut;
+    // Ambil saldo terakhir
+    const lastBalance = await cashbookModel.getLastBalance();
 
+    // Hitung running balance baru
+    data.running_balance = lastBalance + net;
+
+    // Simpan record
     const result = await cashbookModel.createCashbook(data);
 
     const newRecord = {

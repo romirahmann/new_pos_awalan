@@ -35,7 +35,6 @@ export function CashbookPage() {
   const fetchCashbook = useCallback(async () => {
     try {
       let res = await api.get("/master/cashbooks");
-
       setCashBook(res.data.data);
     } catch (error) {
       console.log(error);
@@ -54,12 +53,10 @@ export function CashbookPage() {
     r.notes.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Summary dari filter
   const sumIn = filtered.reduce((acc, v) => acc + v.total_in, 0);
   const sumOut = filtered.reduce((acc, v) => acc + v.total_out, 0);
   const sumBalance = filtered.reduce((acc, v) => acc + v.net_balance, 0);
 
-  // Columns Table
   const columns = [
     {
       key: "recordDate",
@@ -81,8 +78,8 @@ export function CashbookPage() {
       ),
     },
     {
-      key: "net_balance",
-      header: "Net Balance",
+      key: "running_balance",
+      header: "Balance",
       render: (value) => (
         <span className="text-blue-400">Rp {formatIDR(value)}</span>
       ),

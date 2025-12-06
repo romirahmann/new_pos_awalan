@@ -3,79 +3,87 @@ const api = require("../../utils/common");
 const { emit } = require("../../services/socket.service");
 
 /* ============================================================
-   📊 GET DASHBOARD SUMMARY (day | month | year)
+   📊 GET DASHBOARD SUMMARY (overview, trend, top, category, payment)
 ============================================================ */
 const getDashboardSummary = async (req, res) => {
   try {
-    // Default = day
     const type = req.query.type || "day";
-
     const data = await dashboardModel.getDashboardData(type);
-
-    // Emit event untuk auto-update dashboard client
-    emit("dashboard:refresh", data);
 
     return api.success(res, data);
   } catch (error) {
-    console.error("❌ Error getDashboardSummary:", error);
-    return api.error(res, "Internal Server Error");
+    console.error("❌ DASHBOARD ERROR:", error);
+    return api.error(res, "Internal Server Error", 500);
   }
 };
 
 /* ============================================================
-   📈 GET SALES TREND (day=7 hari, month=per hari dlm bulan ini, year=per bulan)
+   📈 SALES TREND ONLY
 ============================================================ */
 const getSalesTrend = async (req, res) => {
   try {
     const type = req.query.type || "day";
-
     const trend = await dashboardModel.getSalesTrend(type);
 
     return api.success(res, trend);
   } catch (error) {
     console.error("❌ Error getSalesTrend:", error);
-    return api.error(res, "Internal Server Error");
+    return api.error(res, "Internal Server Error", 500);
   }
 };
 
 /* ============================================================
-   ⭐ TOP SELLING PRODUCTS (per type)
+   ⭐ TOP SELLING PRODUCTS
 ============================================================ */
 const getTopSellingProducts = async (req, res) => {
   try {
     const type = req.query.type || "day";
-
     const products = await dashboardModel.getTopProducts(type);
 
     return api.success(res, products);
   } catch (error) {
     console.error("❌ Error getTopSellingProducts:", error);
-    return api.error(res, "Internal Server Error");
+    return api.error(res, "Internal Server Error", 500);
   }
 };
 
 /* ============================================================
-   💳 PAYMENT METHOD BREAKDOWN (cash, qris, card per type)
+   📦 CATEGORY SALES (COFFEE, MATCHA, FOOD, etc)
+============================================================ */
+const getCategorySales = async (req, res) => {
+  try {
+    const type = req.query.type || "day";
+    const categories = await dashboardModel.getCategorySales(type);
+
+    return api.success(res, categories);
+  } catch (error) {
+    console.error("❌ Error getCategorySales:", error);
+    return api.error(res, "Internal Server Error", 500);
+  }
+};
+
+/* ============================================================
+   💳 PAYMENT METHOD BREAKDOWN
 ============================================================ */
 const getPaymentBreakdown = async (req, res) => {
   try {
     const type = req.query.type || "day";
-
     const stats = await dashboardModel.getPaymentStats(type);
 
     return api.success(res, stats);
   } catch (error) {
     console.error("❌ Error getPaymentBreakdown:", error);
-    return api.error(res, "Internal Server Error");
+    return api.error(res, "Internal Server Error", 500);
   }
 };
 
 /* ============================================================
-   🚀 EXPORT MODULE
+   🚀 EXPORT CONTROLLER
 ============================================================ */
 module.exports = {
   getDashboardSummary,
   getSalesTrend,
   getTopSellingProducts,
+  getCategorySales, // 🔥 tambahan baru
   getPaymentBreakdown,
 };

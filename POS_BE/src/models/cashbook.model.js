@@ -1,7 +1,7 @@
 const db = require("../database/db.config");
 
 /* ============================================================
-   📄 GET ALL WITH FILTERS (optional: date, type)
+   📄 GET ALL WITH FILTERS
 ============================================================ */
 const getAllCashbook = async (filters = {}) => {
   const query = db("cashbook as c")
@@ -15,13 +15,13 @@ const getAllCashbook = async (filters = {}) => {
       filters.month,
       filters.year,
     ]);
-  if (filters.type) query.where("entryType", filters.type); // 'income' / 'expense'
+  if (filters.type) query.where("entryType", filters.type);
 
   return await query;
 };
 
 /* ============================================================
-   📄 GET SINGLE CASHBOOK BY ID
+   📄 GET SINGLE CASHBOOK
 ============================================================ */
 const getCashbookById = async (id) =>
   db("cashbook as c")
@@ -29,6 +29,18 @@ const getCashbookById = async (id) =>
     .select("c.*", "u.username as createdByName")
     .where({ id })
     .first();
+
+/* ============================================================
+   📊 GET LAST RUNNING BALANCE
+============================================================ */
+const getLastBalance = async () => {
+  const last = await db("cashbook")
+    .select("running_balance")
+    .orderBy("id", "desc")
+    .first();
+
+  return last ? Number(last.running_balance) : 0;
+};
 
 /* ============================================================
    ➕ CREATE NEW CASHBOOK ENTRY
@@ -49,7 +61,7 @@ const updateCashbook = async (id, data) =>
 const deleteCashbook = async (id) => await db("cashbook").where({ id }).del();
 
 /* ============================================================
-   📊 GET DAILY / MONTHLY SUMMARY
+   📊 GET MONTHLY SUMMARY
 ============================================================ */
 const getCashSummary = async (month, year) => {
   return await db("cashbook")
@@ -71,6 +83,7 @@ const getCashSummary = async (month, year) => {
 module.exports = {
   getAllCashbook,
   getCashbookById,
+  getLastBalance,
   createCashbook,
   updateCashbook,
   deleteCashbook,
