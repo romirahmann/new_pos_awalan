@@ -83,8 +83,8 @@ const saveTrx = async (invoiceCode, formData, cart) => {
   }
 };
 
-const getAll = async () => {
-  return await db("transactions as t")
+const getAll = async (filter) => {
+  const query = db("transactions as t")
     .leftJoin("users as u", "t.userId", "u.userId")
     .select(
       "t.transactionId",
@@ -96,9 +96,23 @@ const getAll = async () => {
       "t.discount",
       "t.tax",
       "t.customerName",
-      "t.createdAt"
+      "t.createdAt",
+      "u.fullName"
     )
     .orderBy("t.createdAt", "desc");
+
+  if (filter === "day") {
+    query.whereRaw("DATE(t.createdAt) = CURDATE()");
+  } else if (filter === "month") {
+    query.whereRaw(`
+      YEAR(t.createdAt) = YEAR(CURDATE()) 
+      AND MONTH(t.createdAt) = MONTH(CURDATE())
+    `);
+  } else if (filter === "year") {
+    query.whereRaw("YEAR(t.createdAt) = YEAR(CURDATE())");
+  }
+
+  return await query;
 };
 
 const checkOut = async (invoiceCode, formData, cart) => {

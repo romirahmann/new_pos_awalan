@@ -43,7 +43,7 @@ export function TransactionPage() {
   const fetchDetail = async (invoiceCode) => {
     try {
       let res = await api.get(`/master/transactions/${invoiceCode}/items`);
-      console.log(res.data.data);
+
       setSelectedOrder(res.data.data);
     } catch (error) {
       console.log(error);

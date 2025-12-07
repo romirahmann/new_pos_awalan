@@ -47,11 +47,8 @@ export function OrderDetail() {
   }, [fetchDetail]);
 
   const updateStatus = async (type) => {
-    console.log(type, transaction);
-
     if (type === "PAID") {
       try {
-        console.log("TRANSACTION PAID");
         await api.put(`/master/transactions/${transaction.transactionId}`, {
           status: "paid",
         });

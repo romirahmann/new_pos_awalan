@@ -2,7 +2,7 @@
 --
 -- Host: localhost    Database: awalan
 -- ------------------------------------------------------
--- Server version	8.0.41
+-- Server version	8.0.43
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -207,7 +207,7 @@ CREATE TABLE `transaction_item_addons` (
   PRIMARY KEY (`id`),
   KEY `transactionItemId` (`transactionItemId`),
   CONSTRAINT `transaction_item_addons_ibfk_1` FOREIGN KEY (`transactionItemId`) REFERENCES `transaction_items` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -216,7 +216,7 @@ CREATE TABLE `transaction_item_addons` (
 
 LOCK TABLES `transaction_item_addons` WRITE;
 /*!40000 ALTER TABLE `transaction_item_addons` DISABLE KEYS */;
-INSERT INTO `transaction_item_addons` VALUES (30,48,0.00,1,'Non Sugar'),(31,49,0.00,1,'Sugar'),(32,51,0.00,1,'Sugar'),(33,55,0.00,1,'Sugar');
+INSERT INTO `transaction_item_addons` VALUES (30,48,0.00,1,'Non Sugar'),(31,49,0.00,1,'Sugar'),(32,51,0.00,1,'Sugar'),(33,55,0.00,1,'Sugar'),(34,56,0.00,1,'Sugar'),(35,59,0.00,1,'Sugar');
 /*!40000 ALTER TABLE `transaction_item_addons` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -235,7 +235,7 @@ CREATE TABLE `transaction_item_variants` (
   PRIMARY KEY (`id`),
   KEY `transactionItemId` (`transactionItemId`),
   CONSTRAINT `transaction_item_variants_ibfk_1` FOREIGN KEY (`transactionItemId`) REFERENCES `transaction_items` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=57 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=59 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -244,7 +244,7 @@ CREATE TABLE `transaction_item_variants` (
 
 LOCK TABLES `transaction_item_variants` WRITE;
 /*!40000 ALTER TABLE `transaction_item_variants` DISABLE KEYS */;
-INSERT INTO `transaction_item_variants` VALUES (53,48,0.00,'Hot'),(54,49,0.00,'Iced'),(55,51,0.00,'Iced'),(56,55,0.00,'Iced');
+INSERT INTO `transaction_item_variants` VALUES (53,48,0.00,'Hot'),(54,49,0.00,'Iced'),(55,51,0.00,'Iced'),(56,55,0.00,'Iced'),(57,56,0.00,'Iced'),(58,59,0.00,'Iced');
 /*!40000 ALTER TABLE `transaction_item_variants` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -268,7 +268,7 @@ CREATE TABLE `transaction_items` (
   KEY `productId` (`productId`),
   CONSTRAINT `transaction_items_ibfk_1` FOREIGN KEY (`invoiceCode`) REFERENCES `transactions` (`invoiceCode`) ON DELETE CASCADE,
   CONSTRAINT `transaction_items_ibfk_2` FOREIGN KEY (`productId`) REFERENCES `products` (`productId`)
-) ENGINE=InnoDB AUTO_INCREMENT=56 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=61 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -277,7 +277,7 @@ CREATE TABLE `transaction_items` (
 
 LOCK TABLES `transaction_items` WRITE;
 /*!40000 ALTER TABLE `transaction_items` DISABLE KEYS */;
-INSERT INTO `transaction_items` VALUES (48,'AWLN-251206-0007',13,1,20000.00,20000.00,''),(49,'AWLN-251206-0008',2,1,18000.00,18000.00,''),(50,'AWLN-251206-0009',16,1,18000.00,18000.00,''),(51,'AWLN-251206-0010',3,1,18000.00,18000.00,''),(52,'AWLN-251206-0010',39,1,18000.00,18000.00,''),(53,'AWLN-251206-0010',33,1,15000.00,15000.00,''),(54,'AWLN-251206-0010',25,1,15000.00,15000.00,''),(55,'AWLN-251206-0011',2,1,18000.00,18000.00,'');
+INSERT INTO `transaction_items` VALUES (48,'AWLN-251206-0007',13,1,20000.00,20000.00,''),(49,'AWLN-251206-0008',2,1,18000.00,18000.00,''),(50,'AWLN-251206-0009',16,1,18000.00,18000.00,''),(51,'AWLN-251206-0010',3,1,18000.00,18000.00,''),(52,'AWLN-251206-0010',39,1,18000.00,18000.00,''),(53,'AWLN-251206-0010',33,1,15000.00,15000.00,''),(54,'AWLN-251206-0010',25,1,15000.00,15000.00,''),(55,'AWLN-251206-0011',2,1,18000.00,18000.00,''),(56,'AWLN-251207-0001',11,1,18000.00,18000.00,''),(57,'AWLN-251207-0001',39,1,18000.00,18000.00,''),(58,'AWLN-251207-0001',16,1,18000.00,18000.00,''),(59,'AWLN-251207-0005',11,1,18000.00,18000.00,''),(60,'AWLN-251207-0005',39,1,18000.00,18000.00,'');
 /*!40000 ALTER TABLE `transaction_items` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -307,7 +307,7 @@ CREATE TABLE `transactions` (
   UNIQUE KEY `invoiceCode` (`invoiceCode`),
   KEY `userId` (`userId`),
   CONSTRAINT `transactions_ibfk_1` FOREIGN KEY (`userId`) REFERENCES `users` (`userId`)
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -316,7 +316,7 @@ CREATE TABLE `transactions` (
 
 LOCK TABLES `transactions` WRITE;
 /*!40000 ALTER TABLE `transactions` DISABLE KEYS */;
-INSERT INTO `transactions` VALUES (30,1,'AWLN-251206-0007','ROMI','dinein','cash','paid',20000.00,0.00,0.00,20000.00,'','2025-12-06 11:35:08','2025-12-06 11:35:28'),(31,1,'AWLN-251206-0008','RAHMAN','dinein','cash','paid',18000.00,0.00,0.00,18000.00,'','2025-12-06 11:35:32','2025-12-06 13:02:21'),(32,1,'AWLN-251206-0009','RISYA','delivery','qris','paid',18000.00,0.00,0.00,18000.00,'','2025-12-06 11:36:08','2025-12-06 11:36:37'),(33,1,'AWLN-251206-0010','WARDAH','dinein','qris','paid',66000.00,0.00,0.00,66000.00,'','2025-12-06 11:37:53','2025-12-06 11:38:25'),(34,1,'AWLN-251206-0011','Irman','takeaway','qris','paid',18000.00,0.00,0.00,18000.00,'','2025-12-06 13:14:43','2025-12-06 13:15:05');
+INSERT INTO `transactions` VALUES (30,1,'AWLN-251206-0007','ROMI','dinein','cash','paid',20000.00,0.00,0.00,20000.00,'','2025-12-06 11:35:08','2025-12-06 11:35:28'),(31,1,'AWLN-251206-0008','RAHMAN','dinein','cash','paid',18000.00,0.00,0.00,18000.00,'','2025-12-06 11:35:32','2025-12-06 13:02:21'),(32,1,'AWLN-251206-0009','RISYA','delivery','qris','paid',18000.00,0.00,0.00,18000.00,'','2025-12-06 11:36:08','2025-12-06 11:36:37'),(33,1,'AWLN-251206-0010','WARDAH','dinein','qris','paid',66000.00,0.00,0.00,66000.00,'','2025-12-06 11:37:53','2025-12-06 11:38:25'),(34,1,'AWLN-251206-0011','Irman','takeaway','qris','paid',18000.00,0.00,0.00,18000.00,'','2025-12-06 13:14:43','2025-12-06 13:15:05'),(35,1,'AWLN-251207-0001','Irman Budiman','dinein','qris','paid',54000.00,0.00,0.00,54000.00,'','2025-12-07 14:49:45','2025-12-07 14:50:18'),(39,1,'AWLN-251207-0005','RANGGA','dinein','qris','paid',36000.00,0.00,0.00,36000.00,'','2025-12-07 15:59:57','2025-12-07 16:00:25'),(40,1,'AWLN-251207-0006',NULL,NULL,'cash','pending',0.00,0.00,0.00,0.00,NULL,'2025-12-07 16:03:46','2025-12-07 16:03:46'),(41,1,'AWLN-251207-0007',NULL,NULL,'cash','pending',0.00,0.00,0.00,0.00,NULL,'2025-12-07 17:26:26','2025-12-07 17:26:26');
 /*!40000 ALTER TABLE `transactions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -334,7 +334,7 @@ CREATE TABLE `trx_counter` (
   `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `trxDate` (`trxDate`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -343,7 +343,7 @@ CREATE TABLE `trx_counter` (
 
 LOCK TABLES `trx_counter` WRITE;
 /*!40000 ALTER TABLE `trx_counter` DISABLE KEYS */;
-INSERT INTO `trx_counter` VALUES (1,'2025-12-02',2,'2025-12-02 10:05:46'),(2,'2025-12-03',3,'2025-12-03 11:30:32'),(3,'2025-12-04',2,'2025-12-04 10:43:12'),(4,'2025-12-05',1,'2025-12-05 10:41:38'),(5,'2025-12-06',11,'2025-12-06 13:14:43');
+INSERT INTO `trx_counter` VALUES (1,'2025-12-02',2,'2025-12-02 10:05:46'),(2,'2025-12-03',3,'2025-12-03 11:30:32'),(3,'2025-12-04',2,'2025-12-04 10:43:12'),(4,'2025-12-05',1,'2025-12-05 10:41:38'),(5,'2025-12-06',11,'2025-12-06 13:14:43'),(6,'2025-12-07',7,'2025-12-07 17:26:26');
 /*!40000 ALTER TABLE `trx_counter` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -420,4 +420,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-12-06 15:46:47
+-- Dump completed on 2025-12-07 22:37:07

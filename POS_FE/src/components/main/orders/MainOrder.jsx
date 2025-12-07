@@ -33,7 +33,7 @@ export function MainOrder() {
 
   const fetchOrders = useCallback(async () => {
     try {
-      let res = await api.get("/master/transactions");
+      let res = await api.get(`/master/transactions?date=day`);
 
       setOrders(res.data.data);
     } catch (error) {
@@ -84,6 +84,7 @@ export function MainOrder() {
         params: { transactionId: res.data.data },
       });
     } catch (error) {
+      showAlert("error", "Add Transaction Failed!");
       console.log(error);
     }
   };

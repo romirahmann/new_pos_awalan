@@ -45,6 +45,7 @@ export function OrderItemPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log(formData, cart);
     try {
       await api.put(`/master/checkout-transaction/${transactionId}`, {
         cart,
@@ -53,7 +54,7 @@ export function OrderItemPage() {
 
       showAlert("success", "Payment Order Successfully!");
       setModal(false);
-      route.navigate({ to: "/orders/main-order" });
+      // route.navigate({ to: "/orders/main-order" });
     } catch (error) {
       showAlert("error", "Failed to payment!");
       console.log(error);

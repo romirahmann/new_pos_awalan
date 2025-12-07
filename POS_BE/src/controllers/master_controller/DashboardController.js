@@ -2,14 +2,10 @@ const dashboardModel = require("../../models/dashboard.model");
 const api = require("../../utils/common");
 const { emit } = require("../../services/socket.service");
 
-/* ============================================================
-   📊 GET DASHBOARD SUMMARY (overview, trend, top, category, payment)
-============================================================ */
 const getDashboardSummary = async (req, res) => {
   try {
     const type = req.query.type || "day";
     const data = await dashboardModel.getDashboardData(type);
-
     return api.success(res, data);
   } catch (error) {
     console.error("❌ DASHBOARD ERROR:", error);

@@ -2,13 +2,16 @@ const trxModel = require("../../models/transaction.model");
 const counterModel = require("../../models/counter.model");
 const api = require("../../utils/common");
 const { emit } = require("../../services/socket.service");
+const { printStruk } = require("../../services/printer.service");
 
 /* ============================================================
    ✅ GET ALL TRANSACTIONS
 ============================================================ */
 const getAllTrx = async (req, res) => {
+  let { date } = req.query;
   try {
-    const data = await trxModel.getAll();
+    console.log(date);
+    const data = await trxModel.getAll(date);
     return api.success(res, data);
   } catch (error) {
     console.log("❌ getAllTrx error:", error);
@@ -110,18 +113,27 @@ const checkOutTrx = async (req, res) => {
 
     const trx = await trxModel.getById(transactionId);
 
-    if (!trx) {
-      return api.error(res, `Transaction Not Found!`, 500);
-    }
+    let dataStruk = {
+      invoiceCode: trx.invoiceCode,
+      cashier: trx.fullName,
+      items: cart,
+      subTotal: formData.subTotal,
+      discount: formData.discount,
+      totalAmount: formData.totalAmount,
+    };
 
-    let totalDiscount = formData.totalAmount * (formData.discount / 100);
-    formData.totalAmount = formData.totalAmount - totalDiscount;
+    // if (!trx) {
+    //   return api.error(res, `Transaction Not Found!`, 500);
+    // }
 
-    formData.status = "paid";
+    // let totalDiscount = formData.totalAmount * (formData.discount / 100);
+    // formData.totalAmount = formData.totalAmount - totalDiscount;
 
-    const result = await trxModel.checkOut(trx.invoiceCode, formData, cart);
+    // formData.status = "paid";
 
-    emit("transaction:saved", result);
+    // const result = await trxModel.checkOut(trx.invoiceCode, formData, cart);
+    printStruk(dataStruk);
+    // emit("transaction:saved", result);
 
     return api.success(res, "result");
   } catch (error) {

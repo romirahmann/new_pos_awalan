@@ -19,9 +19,9 @@ export function DashboardPage() {
   const fetchSummaryData = useCallback(async () => {
     try {
       let res = await api.get(`/master/summary?type=${filterType}`);
-      const d = res.data.data;
+      const d = res?.data?.data || {};
 
-      console.log(res.data.data);
+      console.log(d);
 
       setData(d);
     } catch (err) {
@@ -35,26 +35,26 @@ export function DashboardPage() {
 
   if (!data) return <div className="text-white p-6">Loading...</div>;
 
-  const {
-    overview,
-    topProduct,
-    salesTrend,
-    categorySummary,
-    paymentStats,
-    topProfitProduct,
-    totalProfit,
-    profitTrend,
-    comparison,
-    cashbook,
-  } = data;
+  // SAFE DEFAULTS
+  const overview = data.overview || {};
+  const topProduct = data.topProduct || {};
+  const topProfitProduct = data.topProfitProduct || {};
+  const categorySummary = data.categorySummary || {};
+  const cashbook = data.cashbook || {};
 
-  const trendData = salesTrend.map((d) => ({
-    label: dayjs(d.label).format("DD MMM"),
-    value: d.total,
-  }));
+  const salesTrend = Array.isArray(data.salesTrend) ? data.salesTrend : [];
+  const profitTrend = Array.isArray(data.profitTrend) ? data.profitTrend : [];
+  const comparison = data.comparison || {};
+
+  const trendData =
+    salesTrend?.map((d) => ({
+      label: dayjs(d?.label).format("DD MMM"),
+      value: d?.total || 0,
+    })) || [];
 
   return (
     <div className="p-6 text-white min-h-screen bg-gray-900 rounded-2xl">
+      {/* HEADER */}
       <div className="flex justify-between mb-6">
         <h1 className="text-3xl font-bold">Dashboard</h1>
 
@@ -69,61 +69,65 @@ export function DashboardPage() {
         </select>
       </div>
 
-      {/* KPI KOTAK ATAS */}
+      {/* KPI */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <Card
           title="Total Transaksi"
-          value={`${overview.total_transactions} transaksi`}
-          subtitle={`Item terjual: ${overview.items_sold}`}
+          value={`${overview.total_transactions || 0} transaksi`}
+          subtitle={`Item terjual: ${overview.items_sold || 0}`}
         />
 
         <Card
           title="Kategori Minuman"
           value={
-            categorySummary.coffee +
-            categorySummary.matcha +
-            categorySummary.nonCoffee +
+            (categorySummary.coffee || 0) +
+            (categorySummary.matcha || 0) +
+            (categorySummary.nonCoffee || 0) +
             " item"
           }
-          subtitle={`Coffee: ${categorySummary.coffee}, Matcha: ${categorySummary.matcha}, Non Coffee: ${categorySummary.nonCoffee}`}
+          subtitle={`Coffee: ${categorySummary.coffee || 0}, Matcha: ${
+            categorySummary.matcha || 0
+          }, Non Coffee: ${categorySummary.nonCoffee || 0}`}
         />
 
         <Card
           title="Food & Dessert"
-          value={`${categorySummary.food + categorySummary.dessert} item`}
-          subtitle={`Food:${categorySummary.food}, Dessert: ${categorySummary.dessert}`}
+          value={`${
+            (categorySummary.food || 0) + (categorySummary.dessert || 0)
+          } item`}
+          subtitle={`Food:${categorySummary.food || 0}, Dessert: ${
+            categorySummary.dessert || 0
+          }`}
         />
 
         <Card
           title="Omzet"
-          value={toRupiah(overview.revenue)}
-          subtitle={`Cash: ${toRupiah(overview.cash_income)}, QRIS: ${toRupiah(
-            overview.qris_income
-          )}`}
+          value={toRupiah(overview.revenue || 0)}
+          subtitle={`Cash: ${toRupiah(
+            overview.cash_income || 0
+          )}, QRIS: ${toRupiah(overview.qris_income || 0)}`}
         />
 
         <Card
           title={`Top Product`}
-          value={topProduct.productName}
-          subtitle={`Total Sold: ${topProduct.total_sold}`}
+          value={topProduct?.productName || "-"}
+          subtitle={`Total Sold: ${topProduct?.total_sold || 0}`}
         />
+
         <Card
           title="Top Profit Product"
-          value={toRupiah(topProfitProduct.total_profit)}
-          subtitle={`${topProfitProduct.productName}`}
+          value={toRupiah(topProfitProduct?.total_profit || 0)}
+          subtitle={`${topProfitProduct?.productName || "-"}`}
         />
-        <Card
-          title={`Top Profit`}
-          value={toRupiah(totalProfit)}
-          subtitle={`Test`}
-        />
+
+        <Card title="Top Profit" value={toRupiah(data.totalProfit || 0)} />
 
         {filterType === "day" && (
           <Card
             title="Hari Ini vs Kemarin"
-            value={`${comparison.pctDay}%`}
+            value={`${comparison.pctDay || 0}%`}
             subtitle={`Selisih: ${toRupiah(
-              comparison.today - comparison.yesterday
+              (comparison.today || 0) - (comparison.yesterday || 0)
             )}`}
           />
         )}
@@ -131,9 +135,9 @@ export function DashboardPage() {
         {filterType === "month" && (
           <Card
             title="Bulan Ini vs Bulan Lalu"
-            value={`${comparison.pctMonth}%`}
+            value={`${comparison.pctMonth || 0}%`}
             subtitle={`Selisih: ${toRupiah(
-              comparison.thisMonth - comparison.lastMonth
+              (comparison.thisMonth || 0) - (comparison.lastMonth || 0)
             )}`}
           />
         )}
@@ -141,16 +145,16 @@ export function DashboardPage() {
         {filterType === "year" && (
           <Card
             title="Tahun Ini vs Tahun Lalu"
-            value={`${comparison.pctYear}%`}
+            value={`${comparison.pctYear || 0}%`}
             subtitle={`Selisih: ${toRupiah(
-              comparison.thisYear - comparison.lastYear
+              (comparison.thisYear || 0) - (comparison.lastYear || 0)
             )}`}
           />
         )}
       </div>
 
+      {/* CHARTS */}
       <div className="chart grid grid-cols-1 lg:grid-cols-2 gap-2">
-        {/* CHART */}
         <ChartBox title="Grafik Penjualan">
           <div className="w-full h-[350px]">
             <Line
@@ -159,7 +163,7 @@ export function DashboardPage() {
                 datasets: [
                   {
                     label: "Penjualan",
-                    data: trendData.map((d) => d.value),
+                    data: trendData.map((d) => d.value || 0),
                     borderColor: "#4F46E5",
                     backgroundColor: (ctx) => {
                       const gradient = ctx.chart.ctx.createLinearGradient(
@@ -181,49 +185,22 @@ export function DashboardPage() {
                   },
                 ],
               }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: "index", intersect: false },
-                plugins: {
-                  legend: { display: false },
-                  tooltip: {
-                    callbacks: {
-                      label: function (context) {
-                        return `Rp ${context.parsed.y.toLocaleString()}`;
-                      },
-                    },
-                  },
-                },
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    grid: { color: "#2d2f36" },
-                    ticks: {
-                      color: "#9CA3AF",
-                      callback: function (value) {
-                        return `Rp ${value.toLocaleString()}`;
-                      },
-                    },
-                  },
-                  x: {
-                    grid: { color: "#2d2f36" },
-                    ticks: { color: "#9CA3AF" },
-                  },
-                },
-              }}
+              options={chartOptions}
             />
           </div>
         </ChartBox>
+
         <ChartBox title="Grafik Profit">
           <div className="w-full h-[350px]">
             <Line
               data={{
-                labels: trendData.map((d) => d.label),
+                labels: profitTrend.map((d) =>
+                  dayjs(d?.label).format("DD MMM")
+                ),
                 datasets: [
                   {
                     label: "Profit",
-                    data: profitTrend.map((d) => d.total),
+                    data: profitTrend.map((d) => d?.total || 0),
                     borderColor: "white",
                     backgroundColor: (ctx) => {
                       const gradient = ctx.chart.ctx.createLinearGradient(
@@ -245,54 +222,58 @@ export function DashboardPage() {
                   },
                 ],
               }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: "index", intersect: false },
-                plugins: {
-                  legend: { display: false },
-                  tooltip: {
-                    callbacks: {
-                      label: function (context) {
-                        return `Rp ${context.parsed.y.toLocaleString()}`;
-                      },
-                    },
-                  },
-                },
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    grid: { color: "#2d2f36" },
-                    ticks: {
-                      color: "#9CA3AF",
-                      callback: function (value) {
-                        return `Rp ${value.toLocaleString()}`;
-                      },
-                    },
-                  },
-                  x: {
-                    grid: { color: "#2d2f36" },
-                    ticks: { color: "#9CA3AF" },
-                  },
-                },
-              }}
+              options={chartOptions}
             />
           </div>
         </ChartBox>
       </div>
 
-      <div className="cashbook  mt-8">
+      {/* CASHBOOK */}
+      <div className="cashbook mt-8">
         <div className="title">
           <h1 className="ms-2 text-2xl my-3">Cashbook Dashboard</h1>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card title={`Income`} value={toRupiah(cashbook.total_income)} />
-          <Card title={`Expense`} value={toRupiah(cashbook.total_expense)} />
-          <Card title={`Net Balance`} value={toRupiah(cashbook.net_balance)} />
+          <Card title="Income" value={toRupiah(cashbook.total_income || 0)} />
+          <Card title="Expense" value={toRupiah(cashbook.total_expense || 0)} />
+          <Card
+            title="Net Balance"
+            value={toRupiah(cashbook.net_balance || 0)}
+          />
         </div>
       </div>
     </div>
   );
 }
 
-const toRupiah = (v) => `Rp ${Number(v).toLocaleString()}`;
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: { mode: "index", intersect: false },
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      callbacks: {
+        label: function (context) {
+          return `Rp ${context.parsed.y?.toLocaleString()}`;
+        },
+      },
+    },
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+      grid: { color: "#2d2f36" },
+      ticks: {
+        color: "#9CA3AF",
+        callback: (value) => `Rp ${value?.toLocaleString()}`,
+      },
+    },
+    x: {
+      grid: { color: "#2d2f36" },
+      ticks: { color: "#9CA3AF" },
+    },
+  },
+};
+
+const toRupiah = (v) => `Rp ${Number(v || 0).toLocaleString()}`;
