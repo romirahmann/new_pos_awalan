@@ -16,6 +16,7 @@ import { listenToUpdate } from "../../../services/socket.service";
 import { useAlert } from "../../../store/AlertContext";
 import { useParams, useRouter } from "@tanstack/react-router";
 import { useDispatch, useSelector } from "react-redux";
+import Modal from "../../../shared/Modal";
 
 export function MainOrder() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -89,6 +90,14 @@ export function MainOrder() {
     }
   };
 
+  const handleClosing = async () => {
+    try {
+      console.log(`Handle Close`);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <>
       <div className="min-h-screen bg-gray-900 text-gray-200 p-6 relative">
@@ -120,9 +129,17 @@ export function MainOrder() {
               onClick={() =>
                 setModal({ isOpen: true, type: "ADD", selectedData: [] })
               }
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 px-5 py-2 text-white rounded-lg shadow-md"
+              className="flex text-sm lg:text-md items-center gap-2 bg-blue-600 hover:bg-blue-500 px-5 py-2 text-white rounded-lg shadow-md"
             >
-              <FaPlus /> Tambah Order
+              <FaPlus /> Add
+            </button>
+            <button
+              onClick={() =>
+                setModal({ isOpen: true, type: "CASHBOOK", selectedData: [] })
+              }
+              className="flex items-center text-sm lg:text-md gap-2 bg-red-600 hover:bg-red-500 px-5 py-2 text-white rounded-lg shadow-md"
+            >
+              <FaPlus /> Closing
             </button>
           </div>
         </div>
@@ -168,6 +185,15 @@ export function MainOrder() {
         isOpen={modal.type === "ADD"}
         onClose={() => setModal({ isOpen: false, type: "", selectedData: [] })}
       />
+      <Modal isOpen={modal.type === "CASHBOOK"} title={`ADD CASHBOOK`}>
+        <h1>Closing for all order now?</h1>
+        <button
+          onClick={() => handleClosing()}
+          className="flex mt-5 items-center gap-2 bg-blue-600 hover:bg-blue-500 px-5 py-2 text-white rounded-lg shadow-md"
+        >
+          <FaPlus /> Tambah Cashbook
+        </button>
+      </Modal>
     </>
   );
 }
