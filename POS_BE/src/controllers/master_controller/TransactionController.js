@@ -131,7 +131,7 @@ const checkOutTrx = async (req, res) => {
     formData.status = "paid";
 
     const result = await trxModel.checkOut(trx.invoiceCode, formData, cart);
-    // printStruk(dataStruk);
+    printStruk(dataStruk);
     emit("transaction:saved", result);
 
     return api.success(res, "result");
