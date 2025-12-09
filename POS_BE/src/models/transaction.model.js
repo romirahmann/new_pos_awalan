@@ -45,9 +45,9 @@ const saveTrx = async (invoiceCode, formData, cart) => {
         subtotal: item.totalPrice,
         note: item.note || "",
       };
-
+      console.log(itemPayload);
       const [id] = await trx("transaction_items").insert(itemPayload);
-
+      console.log(id);
       // ======================================================
       // 2.2 INSERT VARIANT (if exists) -> USE YOUR TABLE STRUCTURE
       // ======================================================
@@ -217,25 +217,48 @@ const getTransactionDetails = async (invoiceCode) => {
   return { trx, items };
 };
 
-const addTransactionItem = async (data) => {
-  const product = await db("products")
-    .where({ productId: data.productId })
-    .first();
-  if (!product) throw new Error("Product not found");
+const addTransactionItem = async (data, variant, addons = []) => {
+  return await db.transaction(async (trx) => {
+    const transaction = await trx("transactions")
+      .select("*")
+      .where("invoiceCode", data.invoiceCode)
+      .first();
 
-  const basePrice = product.price;
-  const subtotal = basePrice * data.quantity;
+    if (!transaction) throw new Error("Transaction not found");
 
-  const [id] = await db("transaction_items").insert({
-    invoiceCode: data.invoiceCode,
-    productId: data.productId,
-    quantity: data.quantity,
-    basePrice,
-    subtotal,
-    note: data.note || null,
+    const [itemId] = await trx("transaction_items").insert(data);
+
+    const currentItemTotal = data.subtotal;
+    const newAmount =
+      Number(transaction.totalAmount) + Number(currentItemTotal);
+
+    if (variant) {
+      const dataVariant = {
+        transactionItemId: itemId,
+        variantPrice: variant.extraPrice,
+        variantName: variant.variantValue,
+      };
+      await trx("transaction_item_variants").insert(dataVariant);
+    }
+
+    if (addons && addons.length > 0) {
+      const addonRows = addons.map((a) => ({
+        transactionItemId: itemId,
+        addonName: a.addonName,
+        addonPrice: a.price,
+      }));
+
+      await trx("transaction_item_addons").insert(addonRows);
+    }
+
+    await trx("transactions")
+      .update({ totalAmount: newAmount })
+      .where("invoiceCode", data.invoiceCode);
+
+    console.log("Updated totalAmount:", newAmount);
+
+    return { itemId, newAmount };
   });
-
-  return { id, ...data, basePrice, subtotal };
 };
 
 const updateTransactionItem = async (id, data) =>

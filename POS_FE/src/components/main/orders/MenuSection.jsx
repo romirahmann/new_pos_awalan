@@ -2,7 +2,7 @@
 /* eslint-disable no-unused-vars */
 import { FaSearch } from "react-icons/fa";
 import { motion } from "framer-motion";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import RightSidebar from "../../../shared/RIghtBar";
 import api from "../../../services/axios.service";
 import { listenToUpdate } from "../../../services/socket.service";
@@ -19,7 +19,6 @@ export function MenuSection({ cart, setCart }) {
   const fetchProduct = useCallback(async () => {
     try {
       const res = await api.get("/master/products");
-      // console.log("products:", res.data.data);
       setProducts(res?.data?.data || []);
     } catch (error) {
       console.error(error);
@@ -81,10 +80,11 @@ export function MenuSection({ cart, setCart }) {
     setSelectedItem({
       ...item,
       qty: 1,
-      variant: "", // default selected variant
+      variant: "",
+      variantExtraPrice: 0, // default extraPrice
       variants: item.variants || [],
       note: "",
-      selectedAddons: [], // default empty array
+      selectedAddons: [], // default empty, tidak auto-ceklist
     });
     setRightBar(true);
   };
@@ -97,17 +97,21 @@ export function MenuSection({ cart, setCart }) {
     }));
 
   // Calculate total price
-  const selectedFinalPrice = () => {
+  const selectedFinalPrice = useMemo(() => {
     if (!selectedItem) return 0;
     const base = safeNumber(selectedItem.price);
-    const add = addonsTotal(selectedItem.selectedAddons);
-    return (base + add) * (selectedItem.qty || 1);
-  };
+    const addon = addonsTotal(selectedItem.selectedAddons);
+    const variantExtra = safeNumber(selectedItem.variantExtraPrice || 0);
+    return (base + addon + variantExtra) * (selectedItem.qty || 1);
+  }, [selectedItem]);
 
   // Add to cart
   const addToCart = (item) => {
     const cartItemId = computeCartItemId(item);
-    const basePrice = safeNumber(item.price) + addonsTotal(item.selectedAddons);
+    const basePrice =
+      safeNumber(item.price) +
+      addonsTotal(item.selectedAddons) +
+      safeNumber(item.variantExtraPrice || 0);
     const newItem = {
       cartItemId,
       productId: item.productId,
@@ -173,7 +177,7 @@ export function MenuSection({ cart, setCart }) {
       </div>
 
       {/* Menu Items */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 px-3  overflow-y-auto overflow-x-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 px-3 overflow-y-auto overflow-x-hidden">
         {filteredMenu.map((item) => (
           <motion.button
             key={item.productId}
@@ -250,6 +254,9 @@ export function MenuSection({ cart, setCart }) {
                           setSelectedItem((p) => ({
                             ...p,
                             variant: variantObj.variantValue,
+                            variantExtraPrice: safeNumber(
+                              variantObj.extraPrice || 0
+                            ),
                           }))
                         }
                       />
@@ -281,7 +288,6 @@ export function MenuSection({ cart, setCart }) {
                             setSelectedItem((prev) => {
                               const selected = prev.selectedAddons || [];
                               if (isChecked) {
-                                // remove
                                 return {
                                   ...prev,
                                   selectedAddons: selected.filter(
@@ -289,7 +295,6 @@ export function MenuSection({ cart, setCart }) {
                                   ),
                                 };
                               } else {
-                                // add
                                 return {
                                   ...prev,
                                   selectedAddons: [...selected, addon],
@@ -328,7 +333,7 @@ export function MenuSection({ cart, setCart }) {
               <div className="flex justify-between font-semibold mb-3">
                 <span>Total</span>
                 <span className="text-blue-400 text-lg">
-                  Rp {selectedFinalPrice().toLocaleString()}
+                  Rp {selectedFinalPrice.toLocaleString()}
                 </span>
               </div>
 

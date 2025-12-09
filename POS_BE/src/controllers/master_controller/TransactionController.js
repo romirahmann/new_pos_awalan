@@ -10,7 +10,6 @@ const { printStruk } = require("../../services/printer.service");
 const getAllTrx = async (req, res) => {
   let { date } = req.query;
   try {
-    console.log(date);
     const data = await trxModel.getAll(date);
     return api.success(res, data);
   } catch (error) {
@@ -122,18 +121,18 @@ const checkOutTrx = async (req, res) => {
       totalAmount: formData.totalAmount,
     };
 
-    // if (!trx) {
-    //   return api.error(res, `Transaction Not Found!`, 500);
-    // }
+    if (!trx) {
+      return api.error(res, `Transaction Not Found!`, 500);
+    }
 
-    // let totalDiscount = formData.totalAmount * (formData.discount / 100);
-    // formData.totalAmount = formData.totalAmount - totalDiscount;
+    let totalDiscount = formData.totalAmount * (formData.discount / 100);
+    formData.totalAmount = formData.totalAmount - totalDiscount;
 
-    // formData.status = "paid";
+    formData.status = "paid";
 
-    // const result = await trxModel.checkOut(trx.invoiceCode, formData, cart);
-    printStruk(dataStruk);
-    // emit("transaction:saved", result);
+    const result = await trxModel.checkOut(trx.invoiceCode, formData, cart);
+    // printStruk(dataStruk);
+    emit("transaction:saved", result);
 
     return api.success(res, "result");
   } catch (error) {
@@ -198,11 +197,23 @@ const getItems = async (req, res) => {
 const addItem = async (req, res) => {
   try {
     const data = req.body;
-    const result = await trxModel.addTransactionItem(data);
+    let items = {
+      invoiceCode: data.invoiceCode,
+      productId: data.productId,
+      quantity: data.qty,
+      basePrice: data.basePrice,
+      subtotal: data.totalPrice,
+      note: data.note,
+    };
+
+    let addOns = data.addons;
+    let variant = data.variant;
+    // console.log(items, addOns, variant);
+    const result = await trxModel.addTransactionItem(items, variant, addOns);
 
     emit("transaction_item:created", result);
 
-    return api.success(res, result, "Item added successfully");
+    return api.success(res, "Item added successfully");
   } catch (error) {
     console.log("❌ addItem error:", error);
     return api.error(res, "Internal Server Error");

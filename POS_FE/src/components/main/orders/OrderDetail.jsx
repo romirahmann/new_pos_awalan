@@ -1,12 +1,12 @@
 /* eslint-disable no-unused-vars */
-import { useCallback, useEffect, useState } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useCallback, useEffect, useState, useMemo } from "react";
 import {
   FaMoneyBillWave,
   FaUser,
   FaList,
   FaEdit,
   FaTrash,
-  FaExclamationTriangle,
 } from "react-icons/fa";
 import dayjs from "dayjs";
 import { useParams, useRouter } from "@tanstack/react-router";
@@ -14,23 +14,22 @@ import api from "../../../services/axios.service";
 import Modal from "../../../shared/Modal";
 import { useAlert } from "../../../store/AlertContext";
 import { listenToUpdate } from "../../../services/socket.service";
+import { AddItemDetail } from "./AddItemDetail";
 
 export function OrderDetail() {
   const { invoiceCode } = useParams([]);
   const router = useRouter();
-  const [modal, setModal] = useState({
-    isOpen: false,
-    type: "",
-  });
+  const [modal, setModal] = useState({ isOpen: false, type: "" });
   const [transaction, setTransaction] = useState(null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showAddItem, setShowAddItem] = useState(false);
   const { showAlert } = useAlert();
 
   const fetchDetail = useCallback(async () => {
     try {
       const res = await api.get(`/master/transactions/invoice/${invoiceCode}`);
-      let data = res.data.data;
+      const data = res.data.data;
       setTransaction(data.trx);
       setItems(data.items);
     } catch (err) {
@@ -38,38 +37,37 @@ export function OrderDetail() {
     } finally {
       setLoading(false);
     }
-  });
+  }, [invoiceCode]);
 
   useEffect(() => {
-    ["transaction:created", "transaction:updated", "transaction:deleted"].map(
-      (val) => listenToUpdate(val, fetchDetail)
-    );
+    [
+      "transaction:created",
+      "transaction:updated",
+      "transaction:deleted",
+      "transaction_item:created",
+      "transaction_item:updated",
+      "transaction_item:deleted",
+    ].forEach((event) => listenToUpdate(event, fetchDetail));
   }, [fetchDetail]);
 
-  const updateStatus = async (type) => {
-    if (type === "PAID") {
-      try {
-        await api.put(`/master/transactions/${transaction.transactionId}`, {
-          status: "paid",
-        });
-        showAlert("success", "Transaction Paid Successfully!");
-      } catch (error) {
-        showAlert("error", "Failed to Paid Transaction");
-        console.log(error);
-      }
-    } else {
-      try {
-        await api.put(`/master/transactions/${transaction.transactionId}`, {
-          status: "canceled",
-        });
-        showAlert("success", "Transaction Canceled Successfully!");
-      } catch (error) {
-        showAlert("error", "Failed to Canceled Transaction");
-        console.log(error);
-      }
-    }
+  useEffect(() => {
+    fetchDetail();
+  }, [invoiceCode]);
 
-    setModal({ isOpen: false, type: "" });
+  const updateStatus = async (type) => {
+    try {
+      const status = type === "PAID" ? "paid" : "canceled";
+      await api.put(`/master/transactions/${transaction.transactionId}`, {
+        status,
+      });
+      showAlert("success", `Transaction ${type} Successfully!`);
+      fetchDetail();
+    } catch (err) {
+      console.error(err);
+      showAlert("error", `Failed to ${type} Transaction`);
+    } finally {
+      setModal({ isOpen: false, type: "" });
+    }
   };
 
   const handleEditItem = (item) => {
@@ -80,62 +78,62 @@ export function OrderDetail() {
   };
 
   const handleDeleteItem = async (item) => {
-    if (!confirm("Yakin hapus item ini?")) return;
-
     try {
-      await api.delete(`/master/transactions/items/${item.id}`);
+      await api.delete(`/master/transaction-items/${item.id}`);
+      showAlert("success", "Deleted item successfully!");
       fetchDetail();
     } catch (err) {
       console.error(err);
-      alert("Gagal menghapus item");
+      showAlert("error", "Deleted Item Failed");
     }
   };
-
-  useEffect(() => {
-    fetchDetail();
-  }, [invoiceCode]);
-
-  if (loading) {
+  const handleAddItem = async (val) => {
+    try {
+      await api.post(`/master/transactions/${invoiceCode}/items`, {
+        ...val,
+        invoiceCode,
+      });
+      showAlert("success", "Add Item Successfully!");
+    } catch (error) {
+      console.log(error);
+      showAlert("error", "Add Item Failed!");
+    }
+  };
+  if (loading)
     return (
       <div className="p-8 text-center text-gray-400 text-lg bg-gray-900 min-h-screen">
         Loading Order Detail...
       </div>
     );
-  }
-
-  if (!transaction) {
+  if (!transaction)
     return (
       <div className="p-8 text-center text-red-400 text-lg bg-gray-900 min-h-screen">
         Data tidak ditemukan.
       </div>
     );
-  }
 
   return (
     <>
-      {" "}
       <div className="h-full bg-gray-900 text-gray-200 p-6">
+        {/* HEADER */}
         <div className="title md:flex gap-3 items-center mb-3">
-          <h1 className="text-2xl font-bold ">Order Detail</h1>
-          {/* STATUS */}
+          <h1 className="text-2xl font-bold">Order Detail</h1>
           <StatusBadge status={transaction.status} />
-          <div className="btn_addItem ms-auto">
-            {transaction.status === "pending" && (
-              <button
-                onClick={() => setModal({ isOpen: true, type: "ADD" })}
-                className="bg-green-600 hover:bg-green-700 px-6 py-2  rounded-lg text-white font-semibold"
-              >
-                ADD ITEM
-              </button>
-            )}
-          </div>
+          {transaction.status === "pending" && (
+            <button
+              onClick={() => setShowAddItem(true)}
+              className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg text-white font-semibold ms-auto mt-2 lg:mt-0"
+            >
+              ADD ITEM
+            </button>
+          )}
         </div>
 
+        {/* MAIN GRID */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-90px)]">
           <div className="col-span-2 overflow-y-auto pr-3 space-y-4 pb-24">
             <section className="bg-gray-800/60 shadow rounded-xl border border-gray-700 p-5 mt-2">
               <h2 className="text-xl font-semibold mb-4">Order Items</h2>
-
               <div className="space-y-4">
                 {items.map((item) => (
                   <ItemCard
@@ -149,58 +147,17 @@ export function OrderDetail() {
             </section>
           </div>
 
-          {/* RIGHT (INFO + SUMMARY PANEL) */}
           <div className="col-span-1 sticky top-20 self-start space-y-4">
-            {/* TRANSACTION BASIC INFO */}
-            <section className="bg-gray-800/60 shadow rounded-xl border border-gray-700 p-5">
-              <h2 className="text-xl font-semibold mb-3">Transaction Info</h2>
-
-              <div className="grid grid-cols-1 gap-4">
-                <CardInfo
-                  icon={<FaList className="text-blue-400" />}
-                  title="Invoice"
-                  value={transaction.invoiceCode}
-                />
-
-                <CardInfo
-                  icon={<FaUser className="text-green-400" />}
-                  title="Customer"
-                  value={transaction.customerName || "-"}
-                />
-
-                <CardInfo
-                  icon={<FaMoneyBillWave className="text-yellow-400" />}
-                  title="Payment"
-                  value={transaction?.paymentType?.toUpperCase()}
-                />
-              </div>
-            </section>
+            {/* TRANSACTION INFO */}
+            <TransactionInfo
+              transaction={transaction}
+              setTransaction={setTransaction}
+              fetchDetail={fetchDetail}
+              showAlert={showAlert}
+            />
 
             {/* SUMMARY */}
-            <section className="bg-gray-800/60 shadow rounded-xl border border-gray-700 p-5">
-              <h2 className="text-xl font-semibold mb-3">Summary</h2>
-
-              <SummaryRow label="Subtotal" value={transaction.subTotal} />
-              <SummaryRow
-                label="Discount"
-                value={transaction.totalAmount * (transaction.discount / 100)}
-              />
-              {/* <SummaryRow label="Tax" value={transaction.tax} /> */}
-
-              <hr className="my-3 border-gray-700" />
-
-              <div className="flex justify-between text-lg font-bold">
-                <span>Total</span>
-                <span className="text-green-400">
-                  Rp {Number(transaction.totalAmount).toLocaleString()}
-                </span>
-              </div>
-
-              <p className="text-xs text-gray-500 text-center mt-4">
-                Created at:{" "}
-                {dayjs(transaction.createdAt).format("DD MMM YYYY HH:mm")}
-              </p>
-            </section>
+            <TransactionSummary transaction={transaction} />
           </div>
         </div>
 
@@ -213,7 +170,6 @@ export function OrderDetail() {
             >
               Cancel Order
             </button>
-
             <button
               onClick={() => setModal({ isOpen: true, type: "PAID" })}
               className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg text-white font-semibold"
@@ -223,10 +179,10 @@ export function OrderDetail() {
           </div>
         )}
       </div>
-      {/* MODAL CONFIRM */}
+
+      {/* MODAL */}
       <Modal isOpen={modal.isOpen} title={`${modal.type} TRANSACTION`}>
         <p className="text-sm mb-6">{`Are you sure for ${modal.type} ?`}</p>
-
         <div className="flex justify-end gap-3">
           <button
             onClick={() => setModal({ isOpen: false, type: "" })}
@@ -234,31 +190,33 @@ export function OrderDetail() {
           >
             Batal
           </button>
-          {modal.type === "PAID" && (
-            <button
-              onClick={() => updateStatus(modal.type)}
-              className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded transition"
-            >
-              Paid
-            </button>
-          )}
-          {modal.type === "CANCELED" && (
-            <button
-              onClick={() => updateStatus(modal.type)}
-              className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded transition"
-            >
-              Canceled
-            </button>
-          )}
+          <button
+            onClick={() => updateStatus(modal.type)}
+            className={`px-4 py-2 rounded transition text-white ${
+              modal.type === "PAID"
+                ? "bg-green-600 hover:bg-green-500"
+                : "bg-red-600 hover:bg-red-500"
+            }`}
+          >
+            {modal.type === "PAID" ? "Paid" : "Canceled"}
+          </button>
         </div>
       </Modal>
+
+      {/* ADD ITEM SIDEBAR */}
+      {showAddItem && (
+        <AddItemDetail
+          invoiceCode={transaction.invoiceCode}
+          cart={items}
+          setCart={handleAddItem}
+          onClose={() => setShowAddItem(false)}
+        />
+      )}
     </>
   );
 }
 
-/* ===================================================== */
 /* COMPONENTS */
-/* ===================================================== */
 
 function StatusBadge({ status }) {
   const style =
@@ -277,26 +235,6 @@ function StatusBadge({ status }) {
   );
 }
 
-function CardInfo({ icon, title, value }) {
-  return (
-    <div className="bg-gray-800/70 border border-gray-700 shadow rounded-xl p-4">
-      <div className="flex items-center gap-2 font-semibold mb-1 text-gray-300">
-        {icon} {title}
-      </div>
-      <p className="text-lg font-bold">{value}</p>
-    </div>
-  );
-}
-
-function SummaryRow({ label, value }) {
-  return (
-    <div className="flex justify-between text-sm py-1 text-gray-300">
-      <span>{label}</span>
-      <span>Rp {Number(value).toLocaleString()}</span>
-    </div>
-  );
-}
-
 function ItemCard({ item, onEdit, onDelete }) {
   return (
     <div className="border border-gray-700 rounded-lg p-4 bg-gray-800/40 hover:bg-gray-800/60 transition">
@@ -309,7 +247,6 @@ function ItemCard({ item, onEdit, onDelete }) {
             Qty: {item.quantity} × Rp {Number(item.basePrice).toLocaleString()}
           </p>
         </div>
-
         <div className="flex gap-2">
           <button
             onClick={() => onEdit(item)}
@@ -325,7 +262,6 @@ function ItemCard({ item, onEdit, onDelete }) {
           </button>
         </div>
       </div>
-
       {item.variants?.length > 0 && (
         <div className="mt-2 ml-3">
           <p className="font-medium text-sm text-gray-300">Variants:</p>
@@ -338,7 +274,6 @@ function ItemCard({ item, onEdit, onDelete }) {
           </ul>
         </div>
       )}
-
       {item.addons?.length > 0 && (
         <div className="mt-2 ml-3">
           <p className="font-medium text-sm text-gray-300">Add-ons:</p>
@@ -352,10 +287,139 @@ function ItemCard({ item, onEdit, onDelete }) {
           </ul>
         </div>
       )}
-
       {item.note && (
         <p className="mt-2 text-sm text-gray-500 italic">Note: {item.note}</p>
       )}
+    </div>
+  );
+}
+
+function TransactionInfo({
+  transaction,
+  setTransaction,
+  fetchDetail,
+  showAlert,
+}) {
+  const isPending = transaction.status === "pending";
+  const handleUpdate = async () => {
+    try {
+      await api.put(`/master/transactions/${transaction.transactionId}`, {
+        customerName: transaction.customerName,
+        paymentType: transaction.paymentType,
+      });
+      showAlert("success", "Transaction Info Updated!");
+      fetchDetail();
+    } catch (err) {
+      console.error(err);
+      showAlert("error", "Failed to update transaction info");
+    }
+  };
+
+  return (
+    <section className="bg-gray-800/60 shadow rounded-xl border border-gray-700 p-5">
+      <h2 className="text-xl font-semibold mb-3">Transaction Info</h2>
+      <CardInfo
+        icon={<FaList className="text-blue-400" />}
+        title="Invoice"
+        value={transaction.invoiceCode}
+      />
+      {isPending ? (
+        <>
+          <div className="bg-gray-800/70 border border-gray-700 shadow rounded-xl p-4 mt-3">
+            <div className="flex items-center gap-2 font-semibold mb-1 text-gray-300">
+              <FaUser className="text-green-400" /> Customer
+            </div>
+            <input
+              type="text"
+              value={transaction.customerName || ""}
+              onChange={(e) =>
+                setTransaction((p) => ({ ...p, customerName: e.target.value }))
+              }
+              className="w-full p-2 rounded-lg bg-gray-700 text-gray-200 outline-none"
+              placeholder="Customer Name"
+            />
+          </div>
+          <div className="bg-gray-800/70 border border-gray-700 shadow rounded-xl p-4 mt-3">
+            <div className="flex items-center gap-2 font-semibold mb-1 text-gray-300">
+              <FaMoneyBillWave className="text-yellow-400" /> Payment
+            </div>
+            <select
+              value={transaction.paymentType || ""}
+              onChange={(e) =>
+                setTransaction((p) => ({ ...p, paymentType: e.target.value }))
+              }
+              className="w-full p-2 rounded-lg bg-gray-700 text-gray-200 outline-none"
+            >
+              <option value="">Select Payment Type</option>
+              <option value="cash">Cash</option>
+              <option value="qr">QR</option>
+            </select>
+          </div>
+          <button
+            onClick={handleUpdate}
+            className="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold"
+          >
+            Update Info
+          </button>
+        </>
+      ) : (
+        <>
+          <CardInfo
+            icon={<FaUser className="text-green-400" />}
+            title="Customer"
+            value={transaction.customerName || "-"}
+          />
+          <CardInfo
+            icon={<FaMoneyBillWave className="text-yellow-400" />}
+            title="Payment"
+            value={transaction.paymentType?.toUpperCase()}
+          />
+        </>
+      )}
+    </section>
+  );
+}
+
+function TransactionSummary({ transaction }) {
+  const subtotal = Number(transaction.subTotal || 0);
+  const discount = Number(transaction.discount || 0);
+  const totalAmount = Number(transaction.totalAmount || 0);
+
+  return (
+    <section className="bg-gray-800/60 shadow rounded-xl border border-gray-700 p-5">
+      <h2 className="text-xl font-semibold mb-3">Summary</h2>
+      <SummaryRow label="Subtotal" value={subtotal} />
+      <SummaryRow label="Discount" value={subtotal * (discount / 100)} />
+      <hr className="my-3 border-gray-700" />
+      <div className="flex justify-between text-lg font-bold">
+        <span>Total</span>
+        <span className="text-green-400">
+          Rp {totalAmount.toLocaleString()}
+        </span>
+      </div>
+      <p className="text-xs text-gray-500 text-center mt-4">
+        Created at: {dayjs(transaction.createdAt).format("DD MMM YYYY HH:mm")}
+      </p>
+    </section>
+  );
+}
+
+function CardInfo({ icon, title, value }) {
+  return (
+    <div className="bg-gray-800/70 border border-gray-700 shadow rounded-xl p-4 mt-3">
+      <div className="flex items-center gap-2 font-semibold mb-1 text-gray-300">
+        {icon} {title}
+      </div>
+      <p className="text-lg font-bold">{value}</p>
+    </div>
+  );
+}
+
+function SummaryRow({ label, value }) {
+  return (
+    <div className="flex justify-between text-sm py-1 text-gray-300">
+      <span>{label}</span>
+      <span>Rp {Number(value).toLocaleString()}</span>
     </div>
   );
 }

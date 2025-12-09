@@ -1,13 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable no-unused-vars */
 import { useState, useEffect, useCallback } from "react";
-import {
-  FaPlus,
-  FaSearch,
-  FaRedo,
-  FaPrint,
-  FaCreditCard,
-} from "react-icons/fa";
+import { FaPlus, FaSearch, FaBookmark } from "react-icons/fa";
 import { OrderTable } from "./OrderTable";
 
 import { ConfirmNewTransactionModal } from "./ConfirmTransaction";
@@ -139,7 +133,7 @@ export function MainOrder() {
               }
               className="flex items-center text-sm lg:text-md gap-2 bg-red-600 hover:bg-red-500 px-5 py-2 text-white rounded-lg shadow-md"
             >
-              <FaPlus /> Closing
+              <FaBookmark /> Closing
             </button>
           </div>
         </div>
