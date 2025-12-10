@@ -2,12 +2,15 @@
 const express = require("express");
 const cors = require("cors");
 const { createServer } = require("http");
-const socket = require("./services/socket.service"); // tambahkan ini
+const socket = require("./services/socket.service");
+const mainRoute = require("./routes/routes");
+const path = require("path");
 
 const app = express();
 const server = createServer(app);
+
+// Init socket.io
 socket.init(server);
-const mainRoute = require("./routes/routes");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -19,17 +22,33 @@ app.use(
   })
 );
 
+// =======================================
+// API ROUTES
+// =======================================
 app.use("/api", mainRoute);
 
-// === Root path ===
-app.get("/", (req, res) => {
+// Status server (bukan "/")
+app.get("/status", (req, res) => {
   res.status(200).json({
     status: true,
-    message: `🚀 Server is running on http://${process.env.HOST}:${process.env.PORT}`,
+    message: "Server OK",
   });
 });
 
-// === Catch-all 404 ===
+// =======================================
+// SERVE REACT BUILD
+// =======================================
+
+// Jika build kamu ada di POS_BE/production/
+app.use(express.static(path.join(__dirname, "../production")));
+
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.join(__dirname, "../production", "index.html"));
+});
+
+// =======================================
+// 404
+// =======================================
 app.use((req, res) => {
   res.status(404).json({
     status: false,
