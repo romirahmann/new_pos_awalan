@@ -145,6 +145,7 @@ const checkOutTrx = async (req, res) => {
       invoiceCode: trx.invoiceCode,
       cashier: trx.fullName,
       items: cart,
+      customerName: formData.customerName,
       subTotal: formData.subTotal,
       discount: formData.discount,
       totalAmount: formData.totalAmount,

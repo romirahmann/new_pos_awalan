@@ -48,7 +48,8 @@ async function printStruk(order) {
       .fontSize(10)
       .text(`${dayjs().format("ddd, DD MMM YYYY")} | ${order.invoiceCode}`);
     doc.text(`Kasir : ${order.cashier}`);
-    doc.text("--------------------------------");
+    doc.text(`Customer: ${order.customerName || "Customer"}`);
+    doc.text("------------------------------------");
 
     // ITEMS
     order.items.forEach((item) => {
