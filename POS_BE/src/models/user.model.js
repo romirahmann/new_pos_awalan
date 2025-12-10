@@ -54,6 +54,9 @@ const updateJobdesk = async (data, jobdeskId) =>
 const deleteJobdesk = async (jobdeskId) =>
   db("jobdesk").where({ jobdeskId }).del();
 
+// Roles
+const getRoles = async () => db.select("*").from("user_roles");
+
 module.exports = {
   register,
   updated,
@@ -65,4 +68,5 @@ module.exports = {
   insertJobdesk,
   updateJobdesk,
   deleteJobdesk,
+  getRoles,
 };

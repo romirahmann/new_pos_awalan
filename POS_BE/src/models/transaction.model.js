@@ -172,8 +172,28 @@ const getById = async (transactionId) => {
   if (!trx) return null;
 
   // Ambil item
-  trx.items = await getTransactionDetails(trx.invoiceCode);
+  trx.items = await db("transaction_items as ti")
+    .leftJoin("products as p", "p.productId", "ti.productId")
+    .select(
+      "ti.id",
+      "ti.invoiceCode",
+      "ti.productId",
+      "p.productName",
+      "ti.quantity",
+      "ti.basePrice",
+      "ti.subtotal",
+      "ti.note"
+    )
+    .where("ti.invoiceCode", trx.invoiceCode);
+  for (const item of trx.items) {
+    item.variants = await db("transaction_item_variants as tiv")
+      .select("tiv.id", "tiv.variantName", "tiv.variantPrice")
+      .where("tiv.transactionItemId", item.id);
 
+    item.addons = await db("transaction_item_addons as tia")
+      .select("tia.id", "tia.addonName", "tia.addonPrice", "tia.quantity")
+      .where("tia.transactionItemId", item.id);
+  }
   return trx;
 };
 
@@ -189,7 +209,7 @@ const getTransactionDetails = async (invoiceCode) => {
     .select("t.*", "u.fullName")
     .where({ invoiceCode })
     .first();
-  // Ambil semua item transaksi
+
   const items = await db("transaction_items as ti")
     .leftJoin("products as p", "p.productId", "ti.productId")
     .select(

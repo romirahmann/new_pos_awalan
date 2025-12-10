@@ -72,6 +72,47 @@ const getOverview = async (type) => {
    ⭐ 2. TOP PRODUCT
 ============================================================ */
 const getTopProduct = async (type) => {
+  // BEST SELLER GLOBAL
+  const bestGlobal = await db("transaction_items as ti")
+    .join("products as p", "p.productId", "ti.productId")
+    .join("categories as c", "c.categoryId", "p.categoryId")
+    .join("transactions as t", "t.invoiceCode", "ti.invoiceCode")
+    .modify((q) => dateFilter(q, type, "t.createdAt"))
+    .select("p.productName", "c.categoryName")
+    .sum({ total_sold: "ti.quantity" })
+    .groupBy("ti.productId")
+    .orderBy("total_sold", "desc")
+    .first();
+
+  // BEST SELLER PER CATEGORY
+  const bestPerCategory = await db("transaction_items as ti")
+    .join("products as p", "p.productId", "ti.productId")
+    .join("categories as c", "c.categoryId", "p.categoryId")
+    .join("transactions as t", "t.invoiceCode", "ti.invoiceCode")
+    .modify((q) => dateFilter(q, type, "t.createdAt"))
+    .select("c.categoryName", "p.productName")
+    .sum({ total_sold: "ti.quantity" })
+    .groupBy("c.categoryId", "ti.productId")
+    .orderBy([
+      { column: "c.categoryName" },
+      { column: "total_sold", order: "desc" },
+    ]);
+
+  // Filter agar tiap kategori hanya ambil top 1
+  const topPerCategory = Object.values(
+    bestPerCategory.reduce((acc, row) => {
+      if (!acc[row.categoryName]) acc[row.categoryName] = row;
+      return acc;
+    }, {})
+  );
+
+  return {
+    bestGlobal,
+    topPerCategory,
+  };
+};
+
+const getTopDrink = async (type) => {
   return await db("transaction_items as ti")
     .join("products as p", "p.productId", "ti.productId")
     .join("categories as c", "c.categoryId", "p.categoryId")

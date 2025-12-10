@@ -70,57 +70,72 @@ export function DashboardPage() {
       </div>
 
       {/* KPI */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <Card
-          title="Total Transaksi"
-          value={`${overview.total_transactions || 0} transaksi`}
-          subtitle={`Item terjual: ${overview.items_sold || 0}`}
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div className="KPI grid grid-cols-1 md:grid-cols-2 gap-2">
+          <Card
+            title="Total Transaksi"
+            value={`${overview.total_transactions || 0} transaksi`}
+            subtitle={`Item terjual: ${overview.items_sold || 0}`}
+          />
 
-        <Card
-          title="Kategori Minuman"
-          value={
-            (categorySummary.coffee || 0) +
-            (categorySummary.matcha || 0) +
-            (categorySummary.nonCoffee || 0) +
-            " item"
-          }
-          subtitle={`Coffee: ${categorySummary.coffee || 0}, Matcha: ${
-            categorySummary.matcha || 0
-          }, Non Coffee: ${categorySummary.nonCoffee || 0}`}
-        />
+          <Card
+            title="Kategori Minuman"
+            value={
+              (categorySummary.coffee || 0) +
+              (categorySummary.matcha || 0) +
+              (categorySummary.nonCoffee || 0) +
+              " item"
+            }
+            subtitle={`Coffee: ${categorySummary.coffee || 0}, Matcha: ${
+              categorySummary.matcha || 0
+            }, Non Coffee: ${categorySummary.nonCoffee || 0}`}
+          />
 
-        <Card
-          title="Food & Dessert"
-          value={`${
-            (categorySummary.food || 0) + (categorySummary.dessert || 0)
-          } item`}
-          subtitle={`Food:${categorySummary.food || 0}, Dessert: ${
-            categorySummary.dessert || 0
-          }`}
-        />
+          <Card
+            title="Food & Dessert"
+            value={`${
+              (categorySummary.food || 0) + (categorySummary.dessert || 0)
+            } item`}
+            subtitle={`Food:${categorySummary.food || 0}, Dessert: ${
+              categorySummary.dessert || 0
+            }`}
+          />
 
-        <Card
-          title="Omzet"
-          value={toRupiah(overview.revenue || 0)}
-          subtitle={`Cash: ${toRupiah(
-            overview.cash_income || 0
-          )}, QRIS: ${toRupiah(overview.qris_income || 0)}`}
-        />
+          <Card
+            title="Omzet"
+            value={toRupiah(overview.revenue || 0)}
+            subtitle={`Cash: ${toRupiah(
+              overview.cash_income || 0
+            )}, QRIS: ${toRupiah(overview.qris_income || 0)}`}
+          />
 
-        <Card
-          title={`Top Product`}
-          value={topProduct?.productName || "-"}
-          subtitle={`Total Sold: ${topProduct?.total_sold || 0}`}
-        />
+          <Card
+            title="Top Profit Product"
+            value={toRupiah(topProfitProduct?.total_profit || 0)}
+            subtitle={`${topProfitProduct?.productName || "-"}`}
+          />
 
-        <Card
-          title="Top Profit Product"
-          value={toRupiah(topProfitProduct?.total_profit || 0)}
-          subtitle={`${topProfitProduct?.productName || "-"}`}
-        />
-
-        <Card title="Top Profit" value={toRupiah(data.totalProfit || 0)} />
+          <Card
+            title="Top Profit"
+            value={toRupiah(data.totalProfit || 0)}
+            subtitle={`Profit all transaction`}
+          />
+        </div>
+        <div className="TopProduct grid grid-cols-1 md:grid-cols-2 gap-2">
+          <Card
+            title={`Top Product`}
+            value={topProduct?.bestGlobal.productName || "-"}
+            subtitle={`Total Sold: ${topProduct?.bestGlobal.total_sold || 0}`}
+          />
+          {topProduct.topPerCategory.map((item, i) => (
+            <Card
+              key={i}
+              title={`Best Seller: ${item.categoryName}`}
+              value={`${item.productName} `}
+              subtitle={`Total Sold: ${item.total_sold} `}
+            />
+          ))}
+        </div>
 
         {filterType === "day" && (
           <Card

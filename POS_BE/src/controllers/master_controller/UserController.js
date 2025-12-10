@@ -107,6 +107,17 @@ const deletedUser = async (req, res) => {
   }
 };
 
+const getJobdeskRole = async (req, res) => {
+  try {
+    let jobdesk = await userModel.getAllJobdesk();
+    let roles = await userModel.getRoles();
+
+    return api.success(res, { jobdesk, roles });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 /* ============================================================
    EXPORT MODULE
 ============================================================ */
@@ -116,4 +127,5 @@ module.exports = {
   register,
   updateUser,
   deletedUser,
+  getJobdeskRole,
 };

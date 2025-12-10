@@ -18,7 +18,7 @@ router.get("/users", UserController.getAllUser);
 router.post("/user", UserController.register);
 router.put("/users/:id", UserController.updateUser);
 router.delete("/users/:id", UserController.deletedUser);
-
+router.get("/jobdesk-roles", UserController.getJobdeskRole);
 /* ================================================
    PRODUCTS
 =================================================== */
@@ -62,6 +62,7 @@ router.get(
 );
 router.post("/transaction", TransactionController.createTrx);
 router.put("/transactions/:transactionId", TransactionController.updateTrx);
+router.put("/paid-trx/:transactionId", TransactionController.paidTrx);
 router.delete("/transactions/:transactionId", TransactionController.deleteTrx);
 
 /* ================================================

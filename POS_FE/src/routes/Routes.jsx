@@ -19,6 +19,7 @@ import { OrderDetail } from "../components/main/orders/OrderDetail";
 import { DashboardPage } from "../pages/main/DashboardPage";
 import { TransactionPage } from "../pages/main/TransactionPage";
 import { CashbookPage } from "../pages/main/CashbookPage";
+import { UserPage } from "../pages/main/UserPage";
 
 // ROOT ROUTE
 const rootRoute = createRootRoute({
@@ -99,6 +100,12 @@ const orderDetail = createRoute({
   component: OrderDetail,
 });
 
+const userpage = createRoute({
+  getParentRoute: () => adminLayout,
+  path: "setting/user-page",
+  component: UserPage,
+});
+
 // ROUTE TREE
 const routeTree = rootRoute.addChildren([
   adminLayout.addChildren([
@@ -106,6 +113,7 @@ const routeTree = rootRoute.addChildren([
     productPage,
     transactionPage,
     cashbookPage,
+    userpage,
   ]),
   orderPage.addChildren([mainOrder, orderItem, orderDetail]),
   loginPage,

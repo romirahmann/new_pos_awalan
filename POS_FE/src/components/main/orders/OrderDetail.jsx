@@ -57,7 +57,7 @@ export function OrderDetail() {
   const updateStatus = async (type) => {
     try {
       const status = type === "PAID" ? "paid" : "canceled";
-      await api.put(`/master/transactions/${transaction.transactionId}`, {
+      await api.put(`/master/paid-trx/${transaction.transactionId}`, {
         status,
       });
       showAlert("success", `Transaction ${type} Successfully!`);

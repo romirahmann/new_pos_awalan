@@ -29,7 +29,6 @@ export function MainOrder() {
   const fetchOrders = useCallback(async () => {
     try {
       let res = await api.get(`/master/transactions?date=day`);
-
       setOrders(res.data.data);
     } catch (error) {
       console.log(error);
@@ -159,6 +158,7 @@ export function MainOrder() {
           <SummaryCard
             title="Total Revenue"
             value={`Rp ${orders
+              .filter((o) => o.status === "paid")
               .reduce((a, b) => a + Number(b.totalAmount), 0)
               .toLocaleString("id-ID")}`}
           />

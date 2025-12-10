@@ -101,6 +101,35 @@ const saveTrx = async (req, res) => {
 };
 
 /* ============================================================
+   ✅ PAID TRANSACTION
+============================================================ */
+const paidTrx = async (req, res) => {
+  const { transactionId } = req.params;
+  const data = req.body;
+  try {
+    let trx = await trxModel.getById(transactionId);
+    await trxModel.updateTransaction(transactionId, data);
+    emit("transaction:updated", { id: transactionId, ...data });
+
+    if (data.status === "paid") {
+      let dataStruk = {
+        invoiceCode: trx.invoiceCode,
+        cashier: trx.fullName,
+        items: trx.items,
+        subTotal: trx.subTotal,
+        discount: trx.discount,
+        totalAmount: trx.totalAmount,
+      };
+      printStruk(dataStruk);
+    }
+
+    return api.success(res, "Transaction updated");
+  } catch (error) {
+    console.log("❌ updateTrx error:", error);
+    return api.error(res, "Internal Server Error");
+  }
+};
+/* ============================================================
    ✅ CHECKOUT TRANSACTION
 ============================================================ */
 const checkOutTrx = async (req, res) => {
@@ -290,7 +319,7 @@ module.exports = {
   updateTrx,
   deleteTrx,
   saveTrx,
-
+  paidTrx,
   getItems,
   addItem,
   updateItem,
