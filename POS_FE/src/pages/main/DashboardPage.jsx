@@ -19,10 +19,9 @@ export function DashboardPage() {
   const fetchSummaryData = useCallback(async () => {
     try {
       let res = await api.get(`/master/summary?type=${filterType}`);
-      const d = res?.data?.data || {};
+      const d = res?.data?.data ?? {};
 
       console.log(d);
-
       setData(d);
     } catch (err) {
       console.log(err);
@@ -36,21 +35,22 @@ export function DashboardPage() {
   if (!data) return <div className="text-white p-6">Loading...</div>;
 
   // SAFE DEFAULTS
-  const overview = data.overview || {};
-  const topProduct = data.topProduct || {};
-  const topProfitProduct = data.topProfitProduct || {};
-  const categorySummary = data.categorySummary || {};
-  const cashbook = data.cashbook || {};
+  const overview = data?.overview ?? {};
+  const topProduct = data?.topProduct ?? {};
+  const topProfitProduct = data?.topProfitProduct ?? {};
+  const categorySummary = data?.categorySummary ?? {};
+  const cashbook = data?.cashbook ?? {};
 
-  const salesTrend = Array.isArray(data.salesTrend) ? data.salesTrend : [];
-  const profitTrend = Array.isArray(data.profitTrend) ? data.profitTrend : [];
-  const comparison = data.comparison || {};
+  const salesTrend = Array.isArray(data?.salesTrend) ? data.salesTrend : [];
+  const profitTrend = Array.isArray(data?.profitTrend) ? data.profitTrend : [];
+
+  const comparison = data?.comparison ?? {};
 
   const trendData =
-    salesTrend?.map((d) => ({
+    salesTrend?.map?.((d) => ({
       label: dayjs(d?.label).format("DD MMM"),
-      value: d?.total || 0,
-    })) || [];
+      value: d?.total ?? 0,
+    })) ?? [];
 
   return (
     <div className="p-6 text-white min-h-screen bg-gray-900 rounded-2xl">
@@ -74,65 +74,67 @@ export function DashboardPage() {
         <div className="KPI grid grid-cols-1 md:grid-cols-2 gap-2">
           <Card
             title="Total Transaksi"
-            value={`${overview.total_transactions || 0} transaksi`}
-            subtitle={`Item terjual: ${overview.items_sold || 0}`}
+            value={`${overview?.total_transactions ?? 0} transaksi`}
+            subtitle={`Item terjual: ${overview?.items_sold ?? 0}`}
           />
 
           <Card
             title="Kategori Minuman"
             value={
-              (categorySummary.coffee || 0) +
-              (categorySummary.matcha || 0) +
-              (categorySummary.nonCoffee || 0) +
+              (categorySummary?.coffee ?? 0) +
+              (categorySummary?.matcha ?? 0) +
+              (categorySummary?.nonCoffee ?? 0) +
               " item"
             }
-            subtitle={`Coffee: ${categorySummary.coffee || 0}, Matcha: ${
-              categorySummary.matcha || 0
-            }, Non Coffee: ${categorySummary.nonCoffee || 0}`}
+            subtitle={`Coffee: ${categorySummary?.coffee ?? 0}, Matcha: ${
+              categorySummary?.matcha ?? 0
+            }, Non Coffee: ${categorySummary?.nonCoffee ?? 0}`}
           />
 
           <Card
             title="Food & Dessert"
             value={`${
-              (categorySummary.food || 0) + (categorySummary.dessert || 0)
+              (categorySummary?.food ?? 0) + (categorySummary?.dessert ?? 0)
             } item`}
-            subtitle={`Food:${categorySummary.food || 0}, Dessert: ${
-              categorySummary.dessert || 0
+            subtitle={`Food: ${categorySummary?.food ?? 0}, Dessert: ${
+              categorySummary?.dessert ?? 0
             }`}
           />
 
           <Card
             title="Omzet"
-            value={toRupiah(overview.revenue || 0)}
+            value={toRupiah(overview?.revenue ?? 0)}
             subtitle={`Cash: ${toRupiah(
-              overview.cash_income || 0
-            )}, QRIS: ${toRupiah(overview.qris_income || 0)}`}
+              overview?.cash_income ?? 0
+            )}, QRIS: ${toRupiah(overview?.qris_income ?? 0)}`}
           />
 
           <Card
             title="Top Profit Product"
-            value={toRupiah(topProfitProduct?.total_profit || 0)}
-            subtitle={`${topProfitProduct?.productName || "-"}`}
+            value={toRupiah(topProfitProduct?.total_profit ?? 0)}
+            subtitle={`${topProfitProduct?.productName ?? "-"}`}
           />
 
           <Card
             title="Top Profit"
-            value={toRupiah(data.totalProfit || 0)}
-            subtitle={`Profit all transaction`}
+            value={toRupiah(data?.totalProfit ?? 0)}
+            subtitle="Profit all transaction"
           />
         </div>
+
         <div className="TopProduct grid grid-cols-1 md:grid-cols-2 gap-2">
           <Card
-            title={`Top Product`}
-            value={topProduct?.bestGlobal.productName || "-"}
-            subtitle={`Total Sold: ${topProduct?.bestGlobal.total_sold || 0}`}
+            title="Top Product"
+            value={topProduct?.bestGlobal?.productName ?? "-"}
+            subtitle={`Total Sold: ${topProduct?.bestGlobal?.total_sold ?? 0}`}
           />
-          {topProduct.topPerCategory.map((item, i) => (
+
+          {(topProduct?.topPerCategory ?? []).map?.((item, i) => (
             <Card
               key={i}
-              title={`Best Seller: ${item.categoryName}`}
-              value={`${item.productName} `}
-              subtitle={`Total Sold: ${item.total_sold} `}
+              title={`Best Seller: ${item?.categoryName ?? "-"}`}
+              value={item?.productName ?? "-"}
+              subtitle={`Total Sold: ${item?.total_sold ?? 0}`}
             />
           ))}
         </div>
@@ -140,9 +142,9 @@ export function DashboardPage() {
         {filterType === "day" && (
           <Card
             title="Hari Ini vs Kemarin"
-            value={`${comparison.pctDay || 0}%`}
+            value={`${comparison?.pctDay ?? 0}%`}
             subtitle={`Selisih: ${toRupiah(
-              (comparison.today || 0) - (comparison.yesterday || 0)
+              (comparison?.today ?? 0) - (comparison?.yesterday ?? 0)
             )}`}
           />
         )}
@@ -150,9 +152,9 @@ export function DashboardPage() {
         {filterType === "month" && (
           <Card
             title="Bulan Ini vs Bulan Lalu"
-            value={`${comparison.pctMonth || 0}%`}
+            value={`${comparison?.pctMonth ?? 0}%`}
             subtitle={`Selisih: ${toRupiah(
-              (comparison.thisMonth || 0) - (comparison.lastMonth || 0)
+              (comparison?.thisMonth ?? 0) - (comparison?.lastMonth ?? 0)
             )}`}
           />
         )}
@@ -160,9 +162,9 @@ export function DashboardPage() {
         {filterType === "year" && (
           <Card
             title="Tahun Ini vs Tahun Lalu"
-            value={`${comparison.pctYear || 0}%`}
+            value={`${comparison?.pctYear ?? 0}%`}
             subtitle={`Selisih: ${toRupiah(
-              (comparison.thisYear || 0) - (comparison.lastYear || 0)
+              (comparison?.thisYear ?? 0) - (comparison?.lastYear ?? 0)
             )}`}
           />
         )}
@@ -174,11 +176,11 @@ export function DashboardPage() {
           <div className="w-full h-[350px]">
             <Line
               data={{
-                labels: trendData.map((d) => d.label),
+                labels: trendData?.map?.((d) => d?.label) ?? [],
                 datasets: [
                   {
                     label: "Penjualan",
-                    data: trendData.map((d) => d.value || 0),
+                    data: trendData?.map?.((d) => d?.value ?? 0) ?? [],
                     borderColor: "#4F46E5",
                     backgroundColor: (ctx) => {
                       const gradient = ctx.chart.ctx.createLinearGradient(
@@ -209,13 +211,13 @@ export function DashboardPage() {
           <div className="w-full h-[350px]">
             <Line
               data={{
-                labels: profitTrend.map((d) =>
-                  dayjs(d?.label).format("DD MMM")
-                ),
+                labels:
+                  profitTrend?.map?.((d) => dayjs(d?.label).format("DD MMM")) ??
+                  [],
                 datasets: [
                   {
                     label: "Profit",
-                    data: profitTrend.map((d) => d?.total || 0),
+                    data: profitTrend?.map?.((d) => d?.total ?? 0) ?? [],
                     borderColor: "white",
                     backgroundColor: (ctx) => {
                       const gradient = ctx.chart.ctx.createLinearGradient(
@@ -249,11 +251,14 @@ export function DashboardPage() {
           <h1 className="ms-2 text-2xl my-3">Cashbook Dashboard</h1>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card title="Income" value={toRupiah(cashbook.total_income || 0)} />
-          <Card title="Expense" value={toRupiah(cashbook.total_expense || 0)} />
+          <Card title="Income" value={toRupiah(cashbook?.total_income ?? 0)} />
+          <Card
+            title="Expense"
+            value={toRupiah(cashbook?.total_expense ?? 0)}
+          />
           <Card
             title="Net Balance"
-            value={toRupiah(cashbook.net_balance || 0)}
+            value={toRupiah(cashbook?.net_balance ?? 0)}
           />
         </div>
       </div>
@@ -291,4 +296,4 @@ const chartOptions = {
   },
 };
 
-const toRupiah = (v) => `Rp ${Number(v || 0).toLocaleString()}`;
+const toRupiah = (v) => `Rp ${Number(v ?? 0).toLocaleString()}`;

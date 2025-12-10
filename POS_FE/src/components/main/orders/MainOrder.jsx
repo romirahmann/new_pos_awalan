@@ -85,9 +85,18 @@ export function MainOrder() {
 
   const handleClosing = async () => {
     try {
-      console.log(`Handle Close`);
+      await api.post("/master/cashbook", {
+        total_in: orders
+          .filter((o) => o.status === "paid")
+          .reduce((a, b) => a + Number(b.totalAmount), 0),
+        notes: "OMSET",
+        createdBy: user.fullName,
+      });
+      setModal({ isOpen: false, type: "", selectedData: [] });
+      showAlert("success", "Closing Successfully!");
     } catch (error) {
       console.log(error);
+      showAlert("error", "closing failed, please try again!");
     }
   };
 
@@ -185,7 +194,7 @@ export function MainOrder() {
           onClick={() => handleClosing()}
           className="flex mt-5 items-center gap-2 bg-blue-600 hover:bg-blue-500 px-5 py-2 text-white rounded-lg shadow-md"
         >
-          <FaPlus /> Tambah Cashbook
+          Closing Now
         </button>
       </Modal>
     </>
