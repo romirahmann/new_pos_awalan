@@ -27,47 +27,34 @@ const saveTrx = async (invoiceCode, formData, cart) => {
   const trx = await db.transaction();
 
   try {
-    // ======================================================
-    // 1️⃣ UPDATE TRANSACTION
-    // ======================================================
     await trx("transactions").where({ invoiceCode }).update(formData);
 
-    // ======================================================
-    // 2️⃣ PROCESS CART ITEMS
-    // ======================================================
     for (const item of cart) {
-      // 2.1 INSERT TRANSACTION ITEM
       const itemPayload = {
         invoiceCode,
         productId: item.productId,
-        quantity: item.qty,
-        basePrice: item.price,
+        quantity: item.quantity,
+        basePrice: item.basePrice,
         subtotal: item.totalPrice,
         note: item.note || "",
       };
-      console.log(itemPayload);
+
       const [id] = await trx("transaction_items").insert(itemPayload);
-      console.log(id);
-      // ======================================================
-      // 2.2 INSERT VARIANT (if exists) -> USE YOUR TABLE STRUCTURE
-      // ======================================================
+
       if (item.variant) {
         await trx("transaction_item_variants").insert({
           variantName: item.variant,
           transactionItemId: id,
-          variantPrice: item.variant.variantPrice || 0,
+          variantPrice: item.variantPrice || 0,
         });
       }
 
-      // ======================================================
-      // 2.3 INSERT ADDONS (if exists) -> USE YOUR TABLE STRUCTURE
-      // ======================================================
       if (item.selectedAddons && item.selectedAddons.length > 0) {
         for (const addon of item.selectedAddons) {
           await trx("transaction_item_addons").insert({
             transactionItemId: id,
             addonName: addon.addonName,
-            addonPrice: addon.addonPrice || 0,
+            addonPrice: addon.price || 0,
             quantity: addon.quantity || 1,
           });
         }
@@ -125,8 +112,8 @@ const checkOut = async (invoiceCode, formData, cart) => {
       const itemPayload = {
         invoiceCode,
         productId: item.productId,
-        quantity: item.qty,
-        basePrice: item.price,
+        quantity: item.quantity,
+        basePrice: item.basePrice,
         subtotal: item.totalPrice,
         note: item.note || "",
       };
@@ -146,7 +133,7 @@ const checkOut = async (invoiceCode, formData, cart) => {
           await trx("transaction_item_addons").insert({
             transactionItemId: id,
             addonName: addon.addonName,
-            addonPrice: addon.addonPrice || 0,
+            addonPrice: addon.price || 0,
             quantity: addon.quantity || 1,
           });
         }
@@ -274,8 +261,6 @@ const addTransactionItem = async (data, variant, addons = []) => {
     await trx("transactions")
       .update({ totalAmount: newAmount })
       .where("invoiceCode", data.invoiceCode);
-
-    console.log("Updated totalAmount:", newAmount);
 
     return { itemId, newAmount };
   });

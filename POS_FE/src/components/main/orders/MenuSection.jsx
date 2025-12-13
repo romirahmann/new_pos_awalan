@@ -81,10 +81,10 @@ export function MenuSection({ cart, setCart }) {
       ...item,
       qty: 1,
       variant: "",
-      variantExtraPrice: 0, // default extraPrice
+      variantExtraPrice: 0,
       variants: item.variants || [],
       note: "",
-      selectedAddons: [], // default empty, tidak auto-ceklist
+      selectedAddons: [],
     });
     setRightBar(true);
   };
@@ -107,6 +107,7 @@ export function MenuSection({ cart, setCart }) {
 
   // Add to cart
   const addToCart = (item) => {
+    console.log(item);
     const cartItemId = computeCartItemId(item);
     const basePrice =
       safeNumber(item.price) +
@@ -116,9 +117,11 @@ export function MenuSection({ cart, setCart }) {
       cartItemId,
       productId: item.productId,
       productName: item.productName,
-      price: basePrice,
-      qty: item.qty || 1,
+      basePrice: Number(item.price) + safeNumber(item.variantExtraPrice || 0),
+      quantity: item.qty || 1,
+      variants: item.dataVariant,
       variant: item.variant || null,
+      variantPrice: safeNumber(selectedItem.variantExtraPrice),
       note: item.note || "",
       categoryName: item.categoryName,
       selectedAddons: item.selectedAddons || [],
@@ -134,7 +137,7 @@ export function MenuSection({ cart, setCart }) {
           ? {
               ...c,
               qty: c.qty + newItem.qty,
-              totalPrice: (c.qty + newItem.qty) * c.price,
+              totalPrice: (c.qty + newItem.qty) * c.basePrice,
             }
           : c
       );
@@ -253,6 +256,7 @@ export function MenuSection({ cart, setCart }) {
                         onChange={() =>
                           setSelectedItem((p) => ({
                             ...p,
+                            dataVariant: variantObj,
                             variant: variantObj.variantValue,
                             variantExtraPrice: safeNumber(
                               variantObj.extraPrice || 0

@@ -16,6 +16,23 @@ const getAllCashbook = async (req, res) => {
   }
 };
 
+const getSummaryCashbook = async (req, res) => {
+  try {
+    const month = req.query.month || "";
+    const year = req.query.year || "";
+
+    if (!month || !year) {
+      return api.error(res, "month & year required", 400);
+    }
+
+    const data = await cashbookModel.getCashSummary(month, year);
+    return api.success(res, data);
+  } catch (error) {
+    console.error("❌ getAllCashbook error:", error);
+    return api.error(res, "Internal Server Error", 500);
+  }
+};
+
 /* ============================================================
    🔍 GET CASHBOOK BY ID
 ============================================================ */
@@ -121,4 +138,5 @@ module.exports = {
   createCashbook,
   updateCashbook,
   deleteCashbook,
+  getSummaryCashbook,
 };

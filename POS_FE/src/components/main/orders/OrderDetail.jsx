@@ -15,6 +15,7 @@ import Modal from "../../../shared/Modal";
 import { useAlert } from "../../../store/AlertContext";
 import { listenToUpdate } from "../../../services/socket.service";
 import { AddItemDetail } from "./AddItemDetail";
+import { PiPackageBold } from "react-icons/pi";
 
 export function OrderDetail() {
   const { invoiceCode } = useParams([]);
@@ -29,6 +30,7 @@ export function OrderDetail() {
   const fetchDetail = useCallback(async () => {
     try {
       const res = await api.get(`/master/transactions/invoice/${invoiceCode}`);
+
       const data = res.data.data;
       setTransaction(data.trx);
       setItems(data.items);
@@ -60,6 +62,7 @@ export function OrderDetail() {
       await api.put(`/master/paid-trx/${transaction.transactionId}`, {
         status,
       });
+
       showAlert("success", `Transaction ${type} Successfully!`);
       fetchDetail();
     } catch (err) {
@@ -116,8 +119,8 @@ export function OrderDetail() {
     <>
       <div className="h-full bg-gray-900 text-gray-200 p-6">
         {/* HEADER */}
-        <div className="title md:flex gap-3 items-center mb-3">
-          <h1 className="text-2xl font-bold">Order Detail</h1>
+        <div className="title flex gap-3 items-center mb-3">
+          <h1 className="text-2xl font-bold mt-5">Order Detail</h1>
           <StatusBadge status={transaction.status} />
           {transaction.status === "pending" && (
             <button
@@ -130,7 +133,7 @@ export function OrderDetail() {
         </div>
 
         {/* MAIN GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-90px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-90px)]">
           <div className="col-span-2 overflow-y-auto pr-3 space-y-4 pb-24">
             <section className="bg-gray-800/60 shadow rounded-xl border border-gray-700 p-5 mt-2">
               <h2 className="text-xl font-semibold mb-4">Order Items</h2>
@@ -147,16 +150,13 @@ export function OrderDetail() {
             </section>
           </div>
 
-          <div className="col-span-1 sticky top-20 self-start space-y-4">
-            {/* TRANSACTION INFO */}
+          <div className="space-y-4 sticky top-20 self-start">
             <TransactionInfo
               transaction={transaction}
               setTransaction={setTransaction}
               fetchDetail={fetchDetail}
               showAlert={showAlert}
             />
-
-            {/* SUMMARY */}
             <TransactionSummary transaction={transaction} />
           </div>
         </div>
@@ -228,7 +228,7 @@ function StatusBadge({ status }) {
 
   return (
     <div
-      className={`w-fit px-4 py-2 rounded-lg border text-sm font-semibold ${style}`}
+      className={` px-4 py-2 rounded-lg border text-sm font-semibold ${style}`}
     >
       Status: {status.toUpperCase()}
     </div>
@@ -248,12 +248,6 @@ function ItemCard({ item, onEdit, onDelete }) {
           </p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={() => onEdit(item)}
-            className="p-2 bg-blue-600/30 hover:bg-blue-600/50 rounded-full"
-          >
-            <FaEdit />
-          </button>
           <button
             onClick={() => onDelete(item)}
             className="p-2 bg-red-600/30 hover:bg-red-600/50 rounded-full"
@@ -306,6 +300,7 @@ function TransactionInfo({
       await api.put(`/master/transactions/${transaction.transactionId}`, {
         customerName: transaction.customerName,
         paymentType: transaction.paymentType,
+        orderType: transaction.orderType,
       });
       showAlert("success", "Transaction Info Updated!");
       fetchDetail();
@@ -317,65 +312,101 @@ function TransactionInfo({
 
   return (
     <section className="bg-gray-800/60 shadow rounded-xl border border-gray-700 p-5">
-      <h2 className="text-xl font-semibold mb-3">Transaction Info</h2>
-      <CardInfo
-        icon={<FaList className="text-blue-400" />}
-        title="Invoice"
-        value={transaction.invoiceCode}
-      />
-      {isPending ? (
-        <>
-          <div className="bg-gray-800/70 border border-gray-700 shadow rounded-xl p-4 mt-3">
-            <div className="flex items-center gap-2 font-semibold mb-1 text-gray-300">
-              <FaUser className="text-green-400" /> Customer
-            </div>
-            <input
-              type="text"
-              value={transaction.customerName || ""}
-              onChange={(e) =>
-                setTransaction((p) => ({ ...p, customerName: e.target.value }))
-              }
-              className="w-full p-2 rounded-lg bg-gray-700 text-gray-200 outline-none"
-              placeholder="Customer Name"
-            />
-          </div>
-          <div className="bg-gray-800/70 border border-gray-700 shadow rounded-xl p-4 mt-3">
-            <div className="flex items-center gap-2 font-semibold mb-1 text-gray-300">
-              <FaMoneyBillWave className="text-yellow-400" /> Payment
-            </div>
-            <select
-              value={transaction.paymentType || ""}
-              onChange={(e) =>
-                setTransaction((p) => ({ ...p, paymentType: e.target.value }))
-              }
-              className="w-full p-2 rounded-lg bg-gray-700 text-gray-200 outline-none"
-            >
-              <option value="">Select Payment Type</option>
-              <option value="cash">Cash</option>
-              <option value="qr">QR</option>
-            </select>
-          </div>
+      <div className="header flex justify-between items-center">
+        <h2 className="text-md md:text-xl font-semibold mb-3">
+          Transaction Info
+        </h2>
+        <div className="btn">
           <button
             onClick={handleUpdate}
-            className="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold"
+            className="ms-auto px-3 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold"
           >
             Update Info
           </button>
-        </>
-      ) : (
-        <>
-          <CardInfo
-            icon={<FaUser className="text-green-400" />}
-            title="Customer"
-            value={transaction.customerName || "-"}
-          />
-          <CardInfo
-            icon={<FaMoneyBillWave className="text-yellow-400" />}
-            title="Payment"
-            value={transaction.paymentType?.toUpperCase()}
-          />
-        </>
-      )}
+        </div>
+      </div>
+      <div className="grid md:grid-cols-2 gap-2">
+        <CardInfo
+          icon={<FaList className="text-blue-400" />}
+          title="Invoice"
+          value={transaction.invoiceCode}
+        />
+        {isPending ? (
+          <>
+            {/* Order Type */}
+            <div className=" bg-gray-800/70 border border-gray-700 shadow rounded-xl p-4 mt-3">
+              <div className="flex items-center gap-2 font-semibold mb-1 text-gray-300">
+                <PiPackageBold className="text-green-400" /> Order Type
+              </div>
+              <select
+                value={transaction.orderType || ""}
+                onChange={(e) =>
+                  setTransaction((p) => ({ ...p, orderType: e.target.value }))
+                }
+                className="w-full p-2 rounded-lg bg-gray-700 text-gray-200 outline-none"
+              >
+                <option value="">Select Payment Type</option>
+                <option value="dinein">Dine In</option>
+                <option value="takeaway">Takeaway</option>
+                <option value="delivery">Delivery</option>
+              </select>
+            </div>
+            {/* Customer */}
+            <div className=" bg-gray-800/70 border border-gray-700 shadow rounded-xl p-4 mt-3">
+              <div className="flex items-center gap-2 font-semibold mb-1 text-gray-300">
+                <FaUser className="text-green-400" /> Customer
+              </div>
+              <input
+                type="text"
+                value={transaction.customerName || ""}
+                onChange={(e) =>
+                  setTransaction((p) => ({
+                    ...p,
+                    customerName: e.target.value,
+                  }))
+                }
+                className="w-full p-2 rounded-lg bg-gray-700 text-gray-200 outline-none"
+                placeholder="Customer Name"
+              />
+            </div>
+            {/* Payment */}
+            <div className="bg-gray-800/70 border border-gray-700 shadow rounded-xl p-4 mt-3">
+              <div className="flex items-center gap-2 font-semibold mb-1 text-gray-300">
+                <FaMoneyBillWave className="text-yellow-400" /> Payment
+              </div>
+              <select
+                value={transaction.paymentType || ""}
+                onChange={(e) =>
+                  setTransaction((p) => ({ ...p, paymentType: e.target.value }))
+                }
+                className="w-full p-2 rounded-lg bg-gray-700 text-gray-200 outline-none"
+              >
+                <option value="">Select Payment Type</option>
+                <option value="cash">Cash</option>
+                <option value="qris">Qris</option>
+              </select>
+            </div>
+          </>
+        ) : (
+          <>
+            <CardInfo
+              icon={<FaUser className="text-green-400" />}
+              title="Order Type"
+              value={transaction.customerName || "-"}
+            />
+            <CardInfo
+              icon={<FaUser className="text-green-400" />}
+              title="Customer"
+              value={transaction.customerName || "-"}
+            />
+            <CardInfo
+              icon={<FaMoneyBillWave className="text-yellow-400" />}
+              title="Payment"
+              value={transaction.paymentType?.toUpperCase()}
+            />
+          </>
+        )}
+      </div>
     </section>
   );
 }
@@ -406,11 +437,11 @@ function TransactionSummary({ transaction }) {
 
 function CardInfo({ icon, title, value }) {
   return (
-    <div className="bg-gray-800/70 border border-gray-700 shadow rounded-xl p-4 mt-3">
-      <div className="flex items-center gap-2 font-semibold mb-1 text-gray-300">
+    <div className="bg-gray-800/70 border border-gray-700 shadow rounded-xl p-2 px-4 md:p-4 mt-3">
+      <div className="text-sm md:text-md flex items-center gap-2 font-semibold mb-1 text-gray-300">
         {icon} {title}
       </div>
-      <p className="text-lg font-bold">{value}</p>
+      <p className="text-sm md:text-lg font-bold">{value}</p>
     </div>
   );
 }

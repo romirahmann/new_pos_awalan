@@ -106,22 +106,28 @@ const saveTrx = async (req, res) => {
 const paidTrx = async (req, res) => {
   const { transactionId } = req.params;
   const data = req.body;
+
   try {
     let trx = await trxModel.getById(transactionId);
-    await trxModel.updateTransaction(transactionId, data);
-    emit("transaction:updated", { id: transactionId, ...data });
 
+    // await trxModel.updateTransaction(transactionId, data);
+    emit("transaction:updated", { id: transactionId, ...data });
+    console.log(trx);
     if (data.status === "paid") {
       let dataStruk = {
         invoiceCode: trx.invoiceCode,
         cashier: trx.fullName,
+        customerName: trx.customerName,
         items: trx.items,
         subTotal: trx.subTotal,
         discount: trx.discount,
         totalAmount: trx.totalAmount,
       };
       printStruk(dataStruk);
+      console.log("PAID: Harusnya print!");
     }
+
+    // console.log(data);
 
     return api.success(res, "Transaction updated");
   } catch (error) {
@@ -140,7 +146,7 @@ const checkOutTrx = async (req, res) => {
     let cart = data.cart;
 
     const trx = await trxModel.getById(transactionId);
-
+    // console.log(formData, cart);
     let dataStruk = {
       invoiceCode: trx.invoiceCode,
       cashier: trx.fullName,
@@ -151,18 +157,18 @@ const checkOutTrx = async (req, res) => {
       totalAmount: formData.totalAmount,
     };
 
-    if (!trx) {
-      return api.error(res, `Transaction Not Found!`, 500);
-    }
+    // if (!trx) {
+    //   return api.error(res, `Transaction Not Found!`, 500);
+    // }
 
-    let totalDiscount = formData.totalAmount * (formData.discount / 100);
-    formData.totalAmount = formData.totalAmount - totalDiscount;
+    // let totalDiscount = formData.totalAmount * (formData.discount / 100);
+    // formData.totalAmount = formData.totalAmount - totalDiscount;
 
-    formData.status = "paid";
+    // formData.status = "paid";
 
-    const result = await trxModel.checkOut(trx.invoiceCode, formData, cart);
+    // const result = await trxModel.checkOut(trx.invoiceCode, formData, cart);
     printStruk(dataStruk);
-    emit("transaction:saved", result);
+    // emit("transaction:saved", result);
 
     return api.success(res, "result");
   } catch (error) {
@@ -176,6 +182,7 @@ const checkOutTrx = async (req, res) => {
 const updateTrx = async (req, res) => {
   const { transactionId } = req.params;
   const data = req.body;
+
   try {
     await trxModel.updateTransaction(transactionId, data);
     emit("transaction:updated", { id: transactionId, ...data });

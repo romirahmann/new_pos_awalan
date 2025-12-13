@@ -1,7 +1,10 @@
 /* eslint-disable no-unused-vars */
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { FaPlus, FaMinus, FaTrash } from "react-icons/fa";
 
+/* ============================= */
+/* SUMMARY ROW                   */
+/* ============================= */
 export function SummaryRow({ label, value = 0, bold = false }) {
   return (
     <div className={`flex justify-between ${bold ? "font-bold" : ""}`}>
@@ -11,7 +14,7 @@ export function SummaryRow({ label, value = 0, bold = false }) {
   );
 }
 
-export function InvoiceSection({ cart, setCart, handlePayment, saveOrder }) {
+export function InvoiceSection({ cart, setCart, handlePayment }) {
   // useEffect(() => {
   //   console.log("cart invoice:", cart);
   // }, [cart]);
@@ -25,23 +28,9 @@ export function InvoiceSection({ cart, setCart, handlePayment, saveOrder }) {
     setCart((prev) =>
       prev.map((item) => {
         if (item.cartItemId === cartItemId) {
-          const qty = Math.max(1, item.qty + delta);
-
-          const addonsTotal = (item.selectedAddons || []).reduce(
-            (s, a) => s + safeNumber(a.price),
-            0
-          );
-
-          const price = safeNumber(item.price);
-          const discountPercent = safeNumber(item.discountProduct || 0);
-          const discountNominal = price * (discountPercent / 100); // rumus diskon %
-
-          const finalPricePerItem = price + addonsTotal - discountNominal;
-
           return {
             ...item,
-            qty,
-            totalPrice: finalPricePerItem * qty,
+            qty: Math.max(1, item.qty + delta),
           };
         }
         return item;
@@ -49,33 +38,26 @@ export function InvoiceSection({ cart, setCart, handlePayment, saveOrder }) {
     );
   };
 
-  // =============================
-  // REMOVE ITEM CART
-  // =============================
   const removeItem = (cartItemId) => {
-    setCart((prev) => prev.filter((item) => item.cartItemId !== cartItemId));
+    setCart((prev) => prev.filter((i) => i.cartItemId !== cartItemId));
   };
 
-  // =============================
-  // HITUNG SUBTOTAL (harga asli + addons)
-  // =============================
-  const subtotal = cart.reduce((sum, item) => {
-    const addonsTotal = (item.selectedAddons || []).reduce(
-      (s, a) => s + safeNumber(a.price),
-      0
-    );
-    return sum + (safeNumber(item.price) + addonsTotal) * item.qty;
-  }, 0);
+  const subtotal = useMemo(() => {
+    return cart.reduce((sum, item) => {
+      const totalPrice = safeNumber(item.totalPrice);
 
-  // =============================
-  // HITUNG TOTAL DISCOUNT (berdasarkan persentase)
-  // =============================
-  const totalDiscount = cart.reduce((sum, item) => {
-    const price = safeNumber(item.price);
-    const discountPercent = safeNumber(item.discountProduct || 0);
-    const discountNominal = price * (discountPercent / 100);
-    return sum + discountNominal * item.qty;
-  }, 0);
+      return sum + totalPrice * item.quantity;
+    }, 0);
+  }, [cart]);
+
+  const totalDiscount = useMemo(() => {
+    return cart.reduce((sum, item) => {
+      const basePrice = safeNumber(item.totalPrice);
+      const discountPercent = safeNumber(item.discountProduct || 0);
+
+      return sum + basePrice * (discountPercent / 100) * item.quantity;
+    }, 0);
+  }, [cart]);
 
   const grandTotal = subtotal - totalDiscount;
 
@@ -87,14 +69,11 @@ export function InvoiceSection({ cart, setCart, handlePayment, saveOrder }) {
         <p className="text-gray-400">Keranjang masih kosong...</p>
       ) : (
         <>
-          {/* ================================
-              CART ITEMS LIST
-          =================================== */}
           <div className="space-y-3 flex-1 overflow-y-auto custom-scroll pr-1">
             {cart.map((item) => {
-              const price = safeNumber(item.price);
+              const basePrice = safeNumber(item.basePrice);
               const discountPercent = safeNumber(item.discountProduct || 0);
-              const discountNominal = price * (discountPercent / 100);
+              const discountNominal = basePrice * (discountPercent / 100);
 
               return (
                 <div
@@ -129,7 +108,7 @@ export function InvoiceSection({ cart, setCart, handlePayment, saveOrder }) {
                     )}
 
                     <p className="text-sm text-gray-400">
-                      Harga: Rp {price.toLocaleString()}
+                      Harga: Rp {basePrice.toLocaleString()}
                     </p>
 
                     {discountPercent > 0 && (
@@ -140,7 +119,7 @@ export function InvoiceSection({ cart, setCart, handlePayment, saveOrder }) {
                     )}
                   </div>
 
-                  {/* QTY BUTTONS */}
+                  {/* QTY */}
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => updateQty(item.cartItemId, -1)}
@@ -170,9 +149,9 @@ export function InvoiceSection({ cart, setCart, handlePayment, saveOrder }) {
             })}
           </div>
 
-          {/* ================================
-              SUMMARY
-          =================================== */}
+          {/* ============================= */}
+          {/* SUMMARY                        */}
+          {/* ============================= */}
           <div className="mt-6 p-4 bg-gray-700 rounded-lg space-y-2">
             <SummaryRow label="Subtotal" value={subtotal} />
             <SummaryRow label="Diskon" value={totalDiscount} />
@@ -180,15 +159,19 @@ export function InvoiceSection({ cart, setCart, handlePayment, saveOrder }) {
             <SummaryRow label="Total" value={grandTotal} bold />
           </div>
 
-          {/* ================================
-              PAYMENT BUTTON
-          =================================== */}
-          <div className="mt-4 flex gap-3">
+          {/* ============================= */}
+          {/* PAYMENT BUTTON                */}
+          {/* ============================= */}
+          <div className="mt-4">
             <button
               onClick={() =>
-                handlePayment({ subtotal, grandTotal, totalDiscount })
+                handlePayment({
+                  subtotal,
+                  totalDiscount,
+                  grandTotal,
+                })
               }
-              className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg"
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg"
             >
               Bayar
             </button>

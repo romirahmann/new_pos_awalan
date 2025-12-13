@@ -45,19 +45,17 @@ export function OrderItemPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(formData, cart);
 
     if (!formData.customerName) {
       showAlert("error", "Customer Name Required!");
       return;
     }
-
+    // console.log(cart, formData);
     try {
       await api.put(`/master/checkout-transaction/${transactionId}`, {
         cart,
         formData,
       });
-
       showAlert("success", "Payment Order Successfully!");
       setModal(false);
       route.navigate({ to: "/orders/main-order" });
@@ -70,12 +68,11 @@ export function OrderItemPage() {
   const saveOrder = async (e) => {
     e.preventDefault();
     try {
-      // console.log(formData);
       await api.put(`/master/save-transaction/${transactionId}`, {
         cart,
         formData,
       });
-
+      // console.log(cart, formData);
       showAlert("success", "Save Order Successfully!");
       setModal(false);
       route.navigate({ to: "/orders/main-order" });
