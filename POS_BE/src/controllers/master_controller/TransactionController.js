@@ -110,9 +110,9 @@ const paidTrx = async (req, res) => {
   try {
     let trx = await trxModel.getById(transactionId);
 
-    // await trxModel.updateTransaction(transactionId, data);
+    await trxModel.updateTransaction(transactionId, data);
     emit("transaction:updated", { id: transactionId, ...data });
-    console.log(trx);
+    // console.log(trx);
     if (data.status === "paid") {
       let dataStruk = {
         invoiceCode: trx.invoiceCode,
@@ -157,18 +157,18 @@ const checkOutTrx = async (req, res) => {
       totalAmount: formData.totalAmount,
     };
 
-    // if (!trx) {
-    //   return api.error(res, `Transaction Not Found!`, 500);
-    // }
+    if (!trx) {
+      return api.error(res, `Transaction Not Found!`, 500);
+    }
 
-    // let totalDiscount = formData.totalAmount * (formData.discount / 100);
-    // formData.totalAmount = formData.totalAmount - totalDiscount;
+    let totalDiscount = formData.totalAmount * (formData.discount / 100);
+    formData.totalAmount = formData.totalAmount - totalDiscount;
 
-    // formData.status = "paid";
+    formData.status = "paid";
 
-    // const result = await trxModel.checkOut(trx.invoiceCode, formData, cart);
+    const result = await trxModel.checkOut(trx.invoiceCode, formData, cart);
     printStruk(dataStruk);
-    // emit("transaction:saved", result);
+    emit("transaction:saved", result);
 
     return api.success(res, "result");
   } catch (error) {

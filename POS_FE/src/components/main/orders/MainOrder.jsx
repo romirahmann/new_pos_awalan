@@ -92,7 +92,7 @@ export function MainOrder() {
         notes: "OMSET",
         createdBy: user.fullName,
       });
-      setModal({ isOpen: false, type: "", selectedData: [] });
+      setModal({ isOpen: false, type: "", selectedData: [0] });
       showAlert("success", "Closing Successfully!");
     } catch (error) {
       console.log(error);
