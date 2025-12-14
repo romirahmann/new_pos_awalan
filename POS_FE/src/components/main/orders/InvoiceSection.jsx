@@ -15,9 +15,9 @@ export function SummaryRow({ label, value = 0, bold = false }) {
 }
 
 export function InvoiceSection({ cart, setCart, handlePayment }) {
-  // useEffect(() => {
-  //   console.log("cart invoice:", cart);
-  // }, [cart]);
+  useEffect(() => {
+    console.log("cart invoice:", cart);
+  }, [cart]);
 
   const safeNumber = (v) => {
     const n = Number(v);
@@ -30,7 +30,7 @@ export function InvoiceSection({ cart, setCart, handlePayment }) {
         if (item.cartItemId === cartItemId) {
           return {
             ...item,
-            qty: Math.max(1, item.qty + delta),
+            quantity: Math.max(1, item.quantity + delta),
           };
         }
         return item;
@@ -44,15 +44,13 @@ export function InvoiceSection({ cart, setCart, handlePayment }) {
 
   const subtotal = useMemo(() => {
     return cart.reduce((sum, item) => {
-      const totalPrice = safeNumber(item.totalPrice);
-
-      return sum + totalPrice * item.quantity;
+      return sum + safeNumber(item.totalPrice) * item.quantity;
     }, 0);
   }, [cart]);
 
   const totalDiscount = useMemo(() => {
     return cart.reduce((sum, item) => {
-      const basePrice = safeNumber(item.totalPrice);
+      const basePrice = safeNumber(item.basePrice);
       const discountPercent = safeNumber(item.discountProduct || 0);
 
       return sum + basePrice * (discountPercent / 100) * item.quantity;
@@ -128,7 +126,7 @@ export function InvoiceSection({ cart, setCart, handlePayment }) {
                       <FaMinus size={12} />
                     </button>
 
-                    <span className="font-bold">{item.qty}</span>
+                    <span className="font-bold">{item.quantity}</span>
 
                     <button
                       onClick={() => updateQty(item.cartItemId, 1)}

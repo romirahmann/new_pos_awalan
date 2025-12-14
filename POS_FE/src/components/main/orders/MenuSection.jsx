@@ -79,7 +79,7 @@ export function MenuSection({ cart, setCart }) {
   const handleProductDetail = (item) => {
     setSelectedItem({
       ...item,
-      qty: 1,
+      quantity: 1,
       variant: "",
       variantExtraPrice: 0,
       variants: item.variants || [],
@@ -93,7 +93,7 @@ export function MenuSection({ cart, setCart }) {
   const updateQty = (delta) =>
     setSelectedItem((prev) => ({
       ...prev,
-      qty: Math.max(1, (prev.qty || 1) + delta),
+      quantity: Math.max(1, (prev.quantity || 1) + delta),
     }));
 
   // Calculate total price
@@ -102,7 +102,7 @@ export function MenuSection({ cart, setCart }) {
     const base = safeNumber(selectedItem.price);
     const addon = addonsTotal(selectedItem.selectedAddons);
     const variantExtra = safeNumber(selectedItem.variantExtraPrice || 0);
-    return (base + addon + variantExtra) * (selectedItem.qty || 1);
+    return (base + addon + variantExtra) * (selectedItem.quantity || 1);
   }, [selectedItem]);
 
   // Add to cart
@@ -118,14 +118,14 @@ export function MenuSection({ cart, setCart }) {
       productId: item.productId,
       productName: item.productName,
       basePrice: Number(item.price) + safeNumber(item.variantExtraPrice || 0),
-      quantity: item.qty || 1,
+      quantity: item.quantity || 1,
       variants: item.dataVariant,
       variant: item.variant || null,
       variantPrice: safeNumber(selectedItem.variantExtraPrice),
       note: item.note || "",
       categoryName: item.categoryName,
       selectedAddons: item.selectedAddons || [],
-      totalPrice: basePrice * (item.qty || 1),
+      totalPrice: basePrice * (item.quantity || 1),
       discountProduct: item.discount,
     };
 
@@ -136,8 +136,8 @@ export function MenuSection({ cart, setCart }) {
         c.cartItemId === cartItemId
           ? {
               ...c,
-              qty: c.qty + newItem.qty,
-              totalPrice: (c.qty + newItem.qty) * c.basePrice,
+              quantity: c.quantity + newItem.quantity,
+              totalPrice: (c.quantity + newItem.quantity) * c.basePrice,
             }
           : c
       );
@@ -228,7 +228,7 @@ export function MenuSection({ cart, setCart }) {
                   −
                 </button>
                 <span className="text-lg font-semibold">
-                  {selectedItem.qty}
+                  {selectedItem.quantity}
                 </span>
                 <button onClick={() => updateQty(1)} className="text-2xl">
                   +

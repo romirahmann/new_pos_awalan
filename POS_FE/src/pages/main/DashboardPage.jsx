@@ -20,7 +20,7 @@ export function DashboardPage() {
     try {
       let res = await api.get(`/master/summary?type=${filterType}`);
       // let summary = await api.get("/master/cashbook-summary?month=");
-      console.log(res.data.data);
+      // console.log(res.data.data);
       const d = res?.data?.data ?? {};
 
       console.log(d);
