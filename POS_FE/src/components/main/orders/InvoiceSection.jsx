@@ -44,7 +44,8 @@ export function InvoiceSection({ cart, setCart, handlePayment }) {
 
   const subtotal = useMemo(() => {
     return cart.reduce((sum, item) => {
-      return sum + safeNumber(item.totalPrice) * item.quantity;
+      return sum + safeNumber(item.basePrice) * item.quantity;
+      // return sum + safeNumber(item.totalPrice);
     }, 0);
   }, [cart]);
 
@@ -53,6 +54,7 @@ export function InvoiceSection({ cart, setCart, handlePayment }) {
       const basePrice = safeNumber(item.basePrice);
       const discountPercent = safeNumber(item.discountProduct || 0);
 
+      // return sum + safeNumber(item.totalPrice) * (discountPercent / 100);
       return sum + basePrice * (discountPercent / 100) * item.quantity;
     }, 0);
   }, [cart]);
